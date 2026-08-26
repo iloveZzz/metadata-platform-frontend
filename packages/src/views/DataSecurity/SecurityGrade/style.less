@@ -1,0 +1,214 @@
+.security-grade-page {
+  padding: 16px;
+
+  .page-card {
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  }
+
+  .header-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 12px;
+
+    .header-info {
+      .header-title-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+
+        .title-icon {
+          font-size: 20px;
+          color: #1890ff;
+        }
+
+        .header-title {
+          font-size: 18px;
+          font-weight: 600;
+          color: #1f2937;
+          margin: 0;
+        }
+      }
+
+      .header-desc {
+        margin: 4px 0 0 28px;
+        font-size: 13px;
+        color: #6b7280;
+      }
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+    }
+  }
+
+  .grade-card-grid {
+    margin-top: 16px;
+
+    .grade-card {
+      background: #ffffff;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      min-height: 220px;
+      transition: all 0.25s ease-in-out;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+      position: relative;
+      overflow: hidden;
+
+      &:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+      }
+
+      &::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+      }
+
+      &.border-color-blue {
+        border-top-color: #1890ff;
+        &::before {
+          background-color: #1890ff;
+        }
+      }
+      &.border-color-green {
+        border-top-color: #52c41a;
+        &::before {
+          background-color: #52c41a;
+        }
+      }
+      &.border-color-orange {
+        border-top-color: #fa8c16;
+        &::before {
+          background-color: #fa8c16;
+        }
+      }
+      &.border-color-red {
+        border-top-color: #f5222d;
+        &::before {
+          background-color: #f5222d;
+        }
+      }
+      &.border-color-purple {
+        border-top-color: #722ed1;
+        &::before {
+          background-color: #722ed1;
+        }
+      }
+
+      .grade-card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 12px;
+
+        .grade-badge-wrap {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          flex: 1;
+          overflow: hidden;
+
+          .grade-code-tag {
+            font-weight: 700;
+            font-size: 12px;
+            margin-right: 0;
+          }
+
+          .grade-name {
+            font-size: 15px;
+            font-weight: 600;
+            color: #111827;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+          }
+        }
+
+        .sensitivity-badge {
+          flex-shrink: 0;
+        }
+      }
+
+      .grade-card-body {
+        flex: 1;
+        margin-bottom: 12px;
+
+        .grade-desc {
+          font-size: 13px;
+          color: #4b5563;
+          line-height: 1.5;
+          margin: 0;
+          display: -webkit-box;
+          -webkit-line-clamp: 2;
+          -webkit-box-orient: vertical;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          min-height: 40px;
+        }
+      }
+
+      .grade-card-meta {
+        border-top: 1px dashed #f3f4f6;
+        padding-top: 10px;
+        margin-bottom: 10px;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+
+        .meta-item {
+          display: flex;
+          justify-content: space-between;
+          font-size: 12px;
+
+          .meta-label {
+            color: #9ca3af;
+          }
+
+          .meta-value {
+            color: #4b5563;
+            font-weight: 500;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+          }
+        }
+      }
+
+      .grade-card-footer {
+        border-top: 1px solid #f3f4f6;
+        padding-top: 8px;
+        margin-top: auto;
+        display: flex;
+        justify-content: space-around;
+        align-items: center;
+
+        .action-btn {
+          font-size: 13px;
+          padding: 0 12px;
+          display: inline-flex;
+          align-items: center;
+          gap: 4px;
+        }
+      }
+    }
+  }
+
+  .empty-wrap {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 48px 0;
+  }
+}

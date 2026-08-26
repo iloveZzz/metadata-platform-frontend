@@ -1,0 +1,31 @@
+# --- YSS AI SKILLS START ---
+# The following skills are available in this project.
+# AI Assistant: When a user request matches a skill, you MUST read the corresponding SKILL.md file.
+
+- api-integration: .agent/skills/api-integration/SKILL.md
+- component-selection-imports: .agent/skills/component-selection-imports/SKILL.md
+- file-export-download: .agent/skills/file-export-download/SKILL.md
+- formily-foundation: .agent/skills/formily-foundation/SKILL.md
+- formily-linkage-effects: .agent/skills/formily-linkage-effects/SKILL.md
+- formily-mode-slot-detail: .agent/skills/formily-mode-slot-detail/SKILL.md
+- formily-step-flow: .agent/skills/formily-step-flow/SKILL.md
+- microapp-commit: .agent/skills/microapp-commit/SKILL.md
+- page-form-module: .agent/skills/page-form-module/SKILL.md
+- page-list-module: .agent/skills/page-list-module/SKILL.md
+- page-module-development: .agent/skills/page-module-development/SKILL.md
+- page-skeleton: .agent/skills/page-skeleton/SKILL.md
+- prototype-page-acceptance: .agent/skills/prototype-page-acceptance/SKILL.md
+- theme-token-usage: .agent/skills/theme-token-usage/SKILL.md
+- use-table-height: .agent/skills/use-table-height/SKILL.md
+- use-tree-height: .agent/skills/use-tree-height/SKILL.md
+- vue3-best-practices: .agent/skills/vue3-best-practices/SKILL.md
+- yedit-table-usage: .agent/skills/yedit-table-usage/SKILL.md
+- yss-formily: .agent/skills/yss-formily/SKILL.md
+- yss-ui-business-page-generation: .agent/skills/yss-ui-business-page-generation/SKILL.md
+- ytable-usage: .agent/skills/ytable-usage/SKILL.md
+- ytree-usage: .agent/skills/ytree-usage/SKILL.md
+
+# General Instruction:
+# Before starting any complex task, check if it falls under one of the skills above.
+# If so, read the SKILL.md file to understand the standards and best practices.
+# --- YSS AI SKILLS END ---

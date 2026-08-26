@@ -1,0 +1,146 @@
+.recognition-feature-page {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-sizing: border-box;
+
+  .content-card {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border-radius: 4px;
+    background: #ffffff;
+
+    :deep(.ant-card-body),
+    :deep(.y-card-body) {
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      padding: 16px 20px;
+    }
+
+    .feature-page-header {
+      flex-shrink: 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+
+      .header-title-area {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+
+        .page-title {
+          font-size: 16px;
+          font-weight: 600;
+          color: #1f2329;
+          letter-spacing: 0.2px;
+        }
+
+        .title-help-icon {
+          color: #8c8c8c;
+          font-size: 14px;
+          cursor: pointer;
+          transition: color 0.2s;
+
+          &:hover {
+            color: #1677ff;
+          }
+        }
+      }
+
+      .header-filter-area {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+
+        .create-btn {
+          display: flex;
+          align-items: center;
+          background-color: #1677ff;
+          border-color: #1677ff;
+          font-weight: 500;
+          box-shadow: 0 2px 0 rgba(5, 145, 255, 0.1);
+
+          &:hover {
+            background-color: #4096ff;
+            border-color: #4096ff;
+          }
+        }
+
+        .refresh-btn {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: #595959;
+
+          &:hover {
+            color: #1677ff;
+            border-color: #1677ff;
+          }
+        }
+      }
+    }
+
+    .table-container {
+      flex: 1;
+      min-height: 0;
+      overflow: hidden;
+
+      .feature-name-cell {
+        color: #1f2329;
+        font-weight: 500;
+      }
+
+      .feature-desc-cell {
+        color: #595959;
+      }
+
+      .type-text {
+        font-size: 13px;
+
+        &.builtin-text {
+          color: #595959;
+        }
+
+        &.custom-text {
+          color: #1677ff;
+        }
+      }
+
+      .action-buttons-wrapper {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+
+        .action-icon-btn {
+          padding: 4px 6px;
+          color: #595959;
+          font-size: 15px;
+
+          &:hover {
+            color: #1677ff;
+          }
+
+          &[disabled] {
+            color: #bfbfbf;
+            cursor: not-allowed;
+          }
+
+          &.ant-btn-dangerous {
+            &:hover {
+              color: #ff4d4f;
+            }
+          }
+        }
+      }
+    }
+  }
+}

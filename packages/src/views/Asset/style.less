@@ -1,0 +1,292 @@
+/**
+ * 元数据清单 / 资产目录样式表
+ * 严格遵循 yss-use-table-height、yss-use-tree-height 与 Ant Design 企业级设计规范
+ */
+
+.metadata-catalog-page {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: #ffffff;
+  overflow: hidden;
+  box-sizing: border-box;
+
+  // 1. 顶部导航与控制栏
+  &__top-nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 20px;
+    height: 52px;
+    border-bottom: 1px solid #f1f5f9;
+    flex-shrink: 0;
+    background: #ffffff;
+
+    .nav-tabs {
+      display: flex;
+      align-items: center;
+      gap: 28px;
+      height: 100%;
+
+      .nav-tab-item {
+        position: relative;
+        display: flex;
+        align-items: center;
+        height: 100%;
+        font-size: 15px;
+        font-weight: 500;
+        color: #475569;
+        cursor: pointer;
+        transition: color 0.2s;
+
+        &:hover {
+          color: #2563eb;
+        }
+
+        &.is-active {
+          color: #0f172a;
+          font-weight: 600;
+
+          &::after {
+            content: "";
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: #2563eb;
+            border-radius: 2px 2px 0 0;
+          }
+        }
+      }
+    }
+
+    .nav-controls {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+
+      .excluded-checkbox {
+        font-size: 13px;
+        color: #1e293b;
+      }
+
+      .global-search-input {
+        width: 220px;
+        border-radius: 6px;
+      }
+
+      .refresh-btn {
+        color: #64748b;
+        border-radius: 6px;
+
+        &:hover {
+          color: #2563eb;
+          border-color: #2563eb;
+        }
+      }
+    }
+  }
+
+  // 2. 主体骨架 (YSplitPane 占据全部剩余高度)
+  &__body {
+    flex: 1;
+    overflow: hidden;
+    min-height: 0;
+
+    .split-pane-wrapper {
+      height: 100%;
+      min-height: 0;
+    }
+  }
+}
+
+.metadata-right-content {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: 16px 20px;
+  overflow: hidden;
+  min-height: 0;
+  box-sizing: border-box;
+
+  // 关键：容器必须设置 flex: 1 + overflow: hidden 保证高度响应式精确计算
+  .metadata-table-area {
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+    position: relative;
+
+    :deep(.vxe-table--body-wrapper),
+    :deep(.ant-table-tbody) {
+      .vxe-body--row,
+      tr {
+        td {
+          padding-top: 10px !important;
+          padding-bottom: 10px !important;
+          vertical-align: middle;
+        }
+      }
+    }
+  }
+}
+
+/* 单元格视觉细节 */
+.meta-name-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 100%;
+
+  .meta-icon-box {
+    width: 24px;
+    height: 24px;
+    border-radius: 4px;
+    background: #2563eb;
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    flex-shrink: 0;
+  }
+
+  .meta-name-link {
+    color: #1e293b;
+    font-weight: 600;
+    font-size: 13px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+
+    &:hover {
+      color: #2563eb;
+      text-decoration: underline;
+    }
+  }
+}
+
+.meta-source-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow: hidden;
+
+  .source-top-line {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+
+    .env-badge {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 0 4px;
+      border-radius: 2px;
+      flex-shrink: 0;
+
+      &.dev {
+        color: #ea580c;
+        background: #fff7ed;
+        border: 1px solid #ffedd5;
+      }
+      &.prod {
+        color: #9333ea;
+        background: #faf5ff;
+        border: 1px solid #f3e8ff;
+      }
+    }
+
+    .connector-link {
+      color: #2563eb;
+      font-size: 13px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+
+      &:hover {
+        text-decoration: underline;
+      }
+    }
+  }
+
+  .source-sub-schema {
+    color: #94a3b8;
+    font-size: 12px;
+    line-height: 1.2;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+.header-info-icon {
+  margin-left: 4px;
+  font-size: 13px;
+  color: #94a3b8;
+  cursor: help;
+  transition: color 0.2s;
+
+  &:hover {
+    color: #2563eb;
+  }
+}
+
+.meta-system-text,
+.meta-type-text,
+.meta-version-text {
+  color: #1e293b;
+  font-size: 13px;
+}
+
+.collector-task-link {
+  color: #2563eb;
+  font-size: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.frequency-cell {
+  font-size: 13px;
+  line-height: 1.35;
+
+  .freq-title {
+    color: #1e293b;
+  }
+
+  .freq-sub {
+    color: #64748b;
+    font-size: 11px;
+    margin-top: 1px;
+  }
+}
+
+.meta-actions {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 2px;
+
+  .action-icon-btn {
+    padding: 2px 6px;
+    font-size: 14px;
+    color: #475569;
+
+    &:hover:not(:disabled) {
+      color: #2563eb;
+      background: #eff6ff;
+      border-radius: 4px;
+    }
+  }
+}
+
+.custom-empty-state {
+  padding: 40px 0;
+}

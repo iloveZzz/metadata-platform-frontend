@@ -1,0 +1,78 @@
+/**
+ * 分级分类页 - 样式
+ * 仅消费主题语义 Token（variables.less / 运行时主题同步），禁止硬编码品牌色。
+ */
+@import url("@/styles/variables.less");
+
+.governance-page {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+
+  &__card {
+    height: 100%;
+    background: var(--bg-color-container, #fff);
+    border: 1px solid var(--border-color-split, #f0f0f0);
+
+    :deep(.ant-card-body) {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      padding: 16px;
+      min-height: 0;
+      overflow: auto;
+    }
+  }
+
+  &__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+
+  &__title {
+    margin-top: 8px;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-color, rgba(0, 0, 0, 0.88));
+  }
+
+  &__desc {
+    margin-top: 4px;
+    color: var(--text-color-secondary, rgba(0, 0, 0, 0.65));
+    font-size: 13px;
+  }
+
+  &__error {
+    margin-bottom: 12px;
+  }
+
+  &__section {
+    margin-bottom: 12px;
+    border: 1px solid var(--border-color-split, #f0f0f0);
+
+    :deep(.ant-card-head) {
+      min-height: 40px;
+    }
+  }
+
+  &__empty {
+    padding: 32px 0;
+  }
+
+  &__drawer-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+  }
+
+  &__correct-desc {
+    margin-bottom: 12px;
+    color: var(--text-color-secondary, rgba(0, 0, 0, 0.65));
+    font-size: 13px;
+  }
+}

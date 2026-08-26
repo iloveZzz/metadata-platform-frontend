@@ -1,0 +1,529 @@
+# OpenAPI 已冻结（2026-08-10）——作为前后端实现与契约测试的稳定输入。
+# 冻结后变更须回到 OpenAPI Draft Review 与 Design Review（见 freeze-record）。
+openapi: 3.1.0
+info:
+  title: 数据中台元数据发现管理平台 API
+  version: 0.1.0
+  description: >
+    元数据采集 / 发现 / 血缘 / 目录 / 治理 / 集成六域 API。
+    响应统一使用 YSS Result / PageResult 包装；错误体支持 field path / code / message / severity。
+    权限：浏览类无权限隐藏，操作类无权限禁用，调用后以 403 / 能力标识兜底；列表按数据域过滤。
+
+servers:
+  - url: /
+
+tags:
+  - { name: connectors, description: 连接器管理（采集域） }
+  - { name: collectors, description: 采集任务（采集域） }
+  - { name: assets, description: 资产目录 / 详情（目录域 / 发现域） }
+  - { name: lineage, description: 血缘（血缘域） }
+  - { name: impact, description: 影响分析（血缘域） }
+  - { name: classifications, description: 分级分类（治理域） }
+  - { name: integrations, description: 集成配置（集成域） }
+  - { name: rbac, description: RBAC / 审计（治理域） }
+
+paths:
+  /api/connectors:
+    get:
+      tags: [connectors]
+      summary: 连接器列表
+      responses:
+        '200': { $ref: '#/components/responses/ConnectorList' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+    post:
+      tags: [connectors]
+      summary: 新增连接器（create-draft / configure）
+      requestBody: { $ref: '#/components/requestBodies/ConnectorCreate' }
+      responses:
+        '201': { $ref: '#/components/responses/Connector' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '422': { $ref: '#/components/responses/Validation' }
+  /api/connectors/{id}:
+    put:
+      tags: [connectors]
+      summary: 更新连接器配置
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      responses:
+        '200': { $ref: '#/components/responses/Connector' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    delete:
+      tags: [connectors]
+      summary: 删除连接器（不可逆，需确认）
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      responses:
+        '200': { $ref: '#/components/responses/Connector' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /api/connectors/{id}/test:
+    post:
+      tags: [connectors]
+      summary: 测试连接（错误分类：网络/凭据/方言）
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      responses:
+        '200': { $ref: '#/components/responses/ConnectTest' }
+        '422': { $ref: '#/components/responses/ConnectTestFail' }
+  /api/collectors:
+    get:
+      tags: [collectors]
+      summary: 采集任务列表
+      responses:
+        '200': { $ref: '#/components/responses/CollectorList' }
+    post:
+      tags: [collectors]
+      summary: 创建采集任务（create）
+      requestBody: { $ref: '#/components/requestBodies/CollectorCreate' }
+      responses:
+        '201': { $ref: '#/components/responses/Collector' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '422': { $ref: '#/components/responses/Validation' }
+  /api/collectors/{id}:
+    put:
+      tags: [collectors]
+      summary: 编辑采集任务调度（update / configure）
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      responses:
+        '200': { $ref: '#/components/responses/Collector' }
+  /api/collectors/run:
+    post:
+      tags: [collectors]
+      summary: 立即执行采集任务（幂等：运行中拒绝重复触发）
+      requestBody:
+        content:
+          application/json:
+            schema: { type: object, required: [collectorId], properties: { collectorId: { type: string } } }
+      responses:
+        '202': { $ref: '#/components/responses/Collector' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /api/collectors/{id}/cancel:
+    post:
+      tags: [collectors]
+      summary: 取消采集任务（仅运行中；幂等）
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      responses:
+        '200': { $ref: '#/components/responses/Collector' }
+        '409': { $ref: '#/components/responses/StateConflict' }
+  /api/collectors/{id}/retry:
+    post:
+      tags: [collectors]
+      summary: 失败重试 / 局部重采（幂等，仅重采失败项）
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      requestBody:
+        content:
+          application/json:
+            schema: { type: object, properties: { failedItemsOnly: { type: boolean, default: true } } }
+      responses:
+        '202': { $ref: '#/components/responses/Collector' }
+  /api/assets:
+    get:
+      tags: [assets]
+      summary: 资产列表 / 搜索（分页/过滤/排序/数据域过滤/收藏/我的资产；列级命中）
+      parameters:
+        - { $ref: '#/components/parameters/Page' }
+        - { $ref: '#/components/parameters/Size' }
+        - { name: sort, in: query, schema: { type: string, enum: [updatedAt, name, classification], default: updatedAt }, description: 默认更新时间倒序 }
+        - { name: keyword, in: query, schema: { type: string } }
+        - { name: source, in: query, schema: { type: string } }
+        - { name: type, in: query, schema: { type: string, enum: [table, column] } }
+        - { name: domain, in: query, schema: { type: string } }
+        - { name: classification, in: query, schema: { type: string } }
+        - { name: favorite, in: query, schema: { type: boolean } }
+        - { name: mine, in: query, schema: { type: boolean } }
+      responses:
+        '200': { $ref: '#/components/responses/AssetPage' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /api/assets/{id}:
+    get:
+      tags: [assets]
+      summary: 资产详情聚合（元数据+血缘+分类+变更）
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      responses:
+        '200': { $ref: '#/components/responses/AssetDetail' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /api/assets/{id}/favorite:
+    post:
+      tags: [assets]
+      summary: 收藏 / 取消收藏（幂等）
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      responses:
+        '200': { $ref: '#/components/responses/Asset' }
+  /api/assets/{id}/claim:
+    post:
+      tags: [assets]
+      summary: 认领 owner（已认领返回 409）
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      responses:
+        '200': { $ref: '#/components/responses/Asset' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /api/assets/{id}/tags:
+    put:
+      tags: [assets]
+      summary: 编辑标签（覆盖式更新）
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      requestBody:
+        content:
+          application/json:
+            schema: { type: object, properties: { tags: { type: array, items: { type: string } } } }
+      responses:
+        '200': { $ref: '#/components/responses/Asset' }
+  /api/assets/{id}/archive:
+    post:
+      tags: [assets]
+      summary: 归档资产（治理专员；归档后只读；幂等）
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      responses:
+        '200': { $ref: '#/components/responses/Asset' }
+        '409': { $ref: '#/components/responses/StateConflict' }
+  /api/assets/{id}/unarchive:
+    post:
+      tags: [assets]
+      summary: 取消归档（恢复可编辑）
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      responses:
+        '200': { $ref: '#/components/responses/Asset' }
+  /api/assets/{id}/lineage:
+    get:
+      tags: [lineage]
+      summary: 血缘图谱（边带 confidence；空血缘可表达）
+      parameters:
+        - { $ref: '#/components/parameters/Id' }
+        - { name: confidence, in: query, schema: { type: string, enum: [auto-high, auto-mid, manual-high, low, all], default: all } }
+      responses:
+        '200': { $ref: '#/components/responses/Lineage' }
+  /api/lineage/manual:
+    post:
+      tags: [lineage]
+      summary: 人工补录血缘（环检测 CYCLE；图版本 token 防冲突 CONFLICT）
+      requestBody: { $ref: '#/components/requestBodies/LineageManual' }
+      responses:
+        '201': { $ref: '#/components/responses/LineageEdge' }
+        '409': { $ref: '#/components/responses/CycleOrConflict' }
+        '422': { $ref: '#/components/responses/Validation' }
+  /api/assets/{id}/impact-analysis:
+    get:
+      tags: [impact]
+      summary: 影响分析（全量召回，按影响深度分组）
+      parameters:
+        - { $ref: '#/components/parameters/Id' }
+        - { name: sortBy, in: query, schema: { type: string, enum: [depth, domain, risk], default: depth } }
+      responses:
+        '200': { $ref: '#/components/responses/Impact' }
+  /api/assets/{id}/impact-analysis/export:
+    get:
+      tags: [impact]
+      summary: 导出影响分析（CSV/JSON；异步任务幂等；审计）
+      parameters:
+        - { $ref: '#/components/parameters/Id' }
+        - { name: format, in: query, schema: { type: string, enum: [csv, json], default: csv } }
+      responses:
+        '202': { $ref: '#/components/responses/ExportTask' }
+  /api/classifications:
+    get:
+      tags: [classifications]
+      summary: 识别结果 / 规则列表
+      responses:
+        '200': { $ref: '#/components/responses/ClassificationList' }
+    post:
+      tags: [classifications]
+      summary: 新增 / 修正分类规则（configure）
+      responses:
+        '201': { $ref: '#/components/responses/Classification' }
+  /api/classifications/{id}/status:
+    put:
+      tags: [classifications]
+      summary: 规则启停（幂等；审计）
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      requestBody:
+        content:
+          application/json:
+            schema: { type: object, required: [enabled], properties: { enabled: { type: boolean } } }
+      responses:
+        '200': { $ref: '#/components/responses/Classification' }
+  /api/classifications/{id}/confirm:
+    post:
+      tags: [classifications]
+      summary: 确认候选分类（幂等）
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      responses:
+        '200': { $ref: '#/components/responses/Classification' }
+  /api/classifications/{id}/propagate:
+    post:
+      tags: [classifications]
+      summary: 触发分类沿血缘传播（同版本只跑一次，幂等）
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      responses:
+        '202': { $ref: '#/components/responses/PropagateTask' }
+  /api/integrations:
+    get:
+      tags: [integrations]
+      summary: 集成配置查询（Gravitino / OpenLineage 端点 / DataHub）
+      responses:
+        '200': { $ref: '#/components/responses/Integration' }
+    put:
+      tags: [integrations]
+      summary: 更新集成配置（configure；Gravitino 端点/认证）
+      responses:
+        '200': { $ref: '#/components/responses/Integration' }
+        '422': { $ref: '#/components/responses/ConnectTestFail' }
+  /api/exports/datahub:
+    post:
+      tags: [integrations]
+      summary: 触发 DataHub 导出（异步任务幂等；审计）
+      responses:
+        '202': { $ref: '#/components/responses/ExportTask' }
+  /api/v1/lineage:
+    post:
+      tags: [integrations]
+      summary: OpenLineage 事件接收（标准协议；外部系统推送）
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/OpenLineageEvent' }
+      responses:
+        '202': { description: 事件已接收 }
+        '422': { $ref: '#/components/responses/Validation' }
+  /api/roles:
+    get:
+      tags: [rbac]
+      summary: 角色列表
+      responses:
+        '200': { $ref: '#/components/responses/RoleList' }
+    post:
+      tags: [rbac]
+      summary: 创建角色
+      responses:
+        '201': { $ref: '#/components/responses/Role' }
+  /api/roles/{id}:
+    delete:
+      tags: [rbac]
+      summary: 删除角色（被引用返回 409）
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      responses:
+        '200': { $ref: '#/components/responses/Role' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /api/audit-logs:
+    get:
+      tags: [rbac]
+      summary: 审计日志查询（只读不可变）
+      parameters:
+        - { $ref: '#/components/parameters/Page' }
+        - { $ref: '#/components/parameters/Size' }
+      responses:
+        '200': { $ref: '#/components/responses/AuditPage' }
+
+components:
+  parameters:
+    Id: { name: id, in: path, required: true, schema: { type: string } }
+    Page: { name: page, in: query, schema: { type: integer, minimum: 1, default: 1 } }
+    Size: { name: size, in: query, schema: { type: integer, minimum: 1, maximum: 200, default: 20 } }
+  requestBodies:
+    ConnectorCreate:
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [name, type, host, port]
+            properties:
+              name: { type: string }
+              type: { type: string, enum: [MySQL, Oracle, OceanBase, GaussDB, Doris, StarRocks, Iceberg, Hudi, Paimon, OSS/S3] }
+              host: { type: string }
+              port: { type: integer }
+              dialect: { type: string, enum: [native, mysql-compatible, gaussdb, auto] }
+              username: { type: string }
+              password: { type: string, description: 加密存储 }
+              autoClassify: { type: boolean, default: true }
+    CollectorCreate:
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [name, connectorId, schedule, mode]
+            properties:
+              name: { type: string }
+              connectorId: { type: string }
+              schedule: { type: string, description: cron 或周期描述 }
+              mode: { type: string, enum: [incremental, full] }
+              strategy: { type: string, enum: [ignore, overwrite, abort-on-failure] }
+              autoClassify: { type: boolean, default: true }
+    LineageManual:
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [fromAssetId, toAssetId, type, confidence]
+            properties:
+              fromAssetId: { type: string }
+              toAssetId: { type: string }
+              type: { type: string, enum: [sql, job, manual] }
+              confidence: { type: string, enum: [auto-high, auto-mid, manual-high, low] }
+              remark: { type: string }
+              graphVersionToken: { type: string, description: 并发防冲突 token }
+  responses:
+    Forbidden:
+      description: 无权限（403 / 能力标识兜底）
+      content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+    NotFound:
+      description: 资源不存在
+      content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+    Conflict:
+      description: 引用/认领冲突（409）
+      content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+    StateConflict:
+      description: 状态冲突（409，如取消非运行中任务、重复归档）
+      content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+    CycleOrConflict:
+      description: 血缘成环（CYCLE）或图版本冲突（CONFLICT）
+      content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+    Validation:
+      description: 字段级校验错误（422）
+      content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+    ConnectTest:
+      description: 连接测试通过
+      content: { application/json: { schema: { $ref: '#/components/schemas/Result' } } }
+    ConnectTestFail:
+      description: 连接测试失败（错误分类：network/credential/dialect）
+      content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+    Connector:
+      description: 连接器
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Result' }
+    ConnectorList:
+      description: 连接器列表
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Result' }
+    Collector:
+      description: 采集任务
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Result' }
+    CollectorList:
+      description: 采集任务列表
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Result' }
+    Asset:
+      description: 资产
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Result' }
+    AssetPage:
+      description: 资产分页（0 条以空分页表达，非错误）
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/PageResult' }
+    AssetDetail:
+      description: 资产详情聚合
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Result' }
+    Lineage:
+      description: 血缘图
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Result' }
+    LineageEdge:
+      description: 血缘边
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Result' }
+    Impact:
+      description: 影响分析
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Result' }
+    ExportTask:
+      description: 导出异步任务
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Result' }
+    PropagateTask:
+      description: 传播异步任务
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Result' }
+    Classification:
+      description: 分类
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Result' }
+    ClassificationList:
+      description: 分类列表
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Result' }
+    Integration:
+      description: 集成配置
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Result' }
+    Role:
+      description: 角色
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Result' }
+    RoleList:
+      description: 角色列表
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Result' }
+    AuditPage:
+      description: 审计分页
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/PageResult' }
+  schemas:
+    Result:
+      type: object
+      description: YSS 统一响应包装（SingleResult/MultiResult 序列化形状）
+      properties:
+        success: { type: boolean }
+        code: { type: string, example: '0' }
+        message: { type: string }
+        tips: { type: string }
+        dataType: { type: string }
+        data: { type: object }
+    PageResult:
+      type: object
+      description: 分页响应（yss-dto PageResult 实际序列化形状；修正记录见 freeze-record §4.2）
+      properties:
+        success: { type: boolean }
+        code: { type: string }
+        message: { type: string }
+        tips: { type: string }
+        dataType: { type: string }
+        totalCount: { type: integer, description: 总条数 }
+        pageSize: { type: integer, description: 每页大小 }
+        pageIndex: { type: integer, description: 当前页码 }
+        data: { type: array, items: { type: object }, description: 当前页数据（0 条以空数组表达，非错误） }
+    Error:
+      type: object
+      properties:
+        code: { type: string, description: 业务错误码，如 CYCLE / CONFLICT / err.network.timeout }
+        message: { type: string }
+        severity: { type: string, enum: [error, warning] }
+        fieldErrors:
+          type: array
+          items:
+            type: object
+            properties:
+              field: { type: string, description: field path }
+              code: { type: string }
+              message: { type: string }
+              severity: { type: string }
+    OpenLineageEvent:
+      type: object
+      description: OpenLineage 标准事件（RunEvent 子集）
+      properties:
+        eventType: { type: string, enum: [START, COMPLETE, FAIL, ABORT] }
+        eventTime: { type: string, format: date-time }
+        run: { type: object, properties: { runId: { type: string } } }
+        job: { type: object, properties: { namespace: { type: string }, name: { type: string } } }
+        inputs: { type: array, items: { $ref: '#/components/schemas/OpenLineageDataset' } }
+        outputs: { type: array, items: { $ref: '#/components/schemas/OpenLineageDataset' } }
+    OpenLineageDataset:
+      type: object
+      properties:
+        namespace: { type: string }
+        name: { type: string }
+        facets: { type: object }

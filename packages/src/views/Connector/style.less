@@ -1,0 +1,98 @@
+/**
+ * 元数据采集与管理工作台 - 样式
+ * 遵循 Ant Design 与 YSS UI 语义 Token 规范
+ */
+@import url("@/styles/variables.less");
+
+.ingestion-page {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow-y: auto;
+  background-color: var(--bg-color-layout, #f0f4fa);
+
+  &__banner {
+    background: linear-gradient(180deg, #e8f3ff 0%, #f0f6ff 60%, var(--bg-color-layout, #f0f4fa) 100%);
+    padding: 28px 32px 16px 32px;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 24px;
+    flex-wrap: wrap;
+  }
+
+  &__banner-content {
+    flex: 1;
+    min-width: 320px;
+  }
+
+  &__banner-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
+  }
+
+  &__title {
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--text-color, #1f2937);
+    line-height: 1.4;
+  }
+
+  &__desc {
+    margin-top: 6px;
+    font-size: 13px;
+    color: var(--text-color-secondary, #6b7280);
+    line-height: 1.6;
+    max-width: 900px;
+  }
+
+  &__error {
+    margin: 0 32px 16px 32px;
+  }
+
+  &__content {
+    padding: 0 32px 32px 32px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  &__section {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  &__section-title {
+    display: flex;
+    align-items: center;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-color, #1f2937);
+
+    &::before {
+      content: "";
+      display: inline-block;
+      width: 4px;
+      height: 15px;
+      background-color: var(--primary-color, #1677ff);
+      border-radius: 2px;
+      margin-right: 8px;
+    }
+  }
+
+  &__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 16px;
+  }
+
+  &__drawer-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+  }
+}

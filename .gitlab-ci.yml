@@ -1,0 +1,183 @@
+# GitLab CI/CD 配置文件
+# 用于构建前端微应用并推送到 Harbor 私有仓库
+
+# 默认所有 Job 均可被新 Pipeline 中断（需配合项目设置开启 Auto-cancel redundant pipelines）
+default:
+  interruptible: true
+
+stages:
+  - build
+  - package
+  - deploy
+
+variables:
+  # Docker 镜像相关变量
+  DOCKER_DRIVER: overlay2
+  DOCKER_TLS_CERTDIR: "/certs"
+  DOCKER_BUILDKIT: "1"
+  # Harbor 仓库配置 harbor.dm.com/yss-datamiddle/yss-frontend-microapp:1.0.0
+  HARBOR_REGISTRY: "harbor.dm.com"
+  HARBOR_PROJECT: "yss-datamiddle"
+  IMAGE_NAME: "yss-frontend-microapp"
+  NODE_IMAGE: "harbor.dm.com/yss-datamiddle/yss-node:22.19.0"
+  # 应用配置
+  APP_NAME: "yss-datamiddle-frontend-microapp"
+  # 基础镜像（如使用内网 Harbor 代理或私有镜像，请在 CI 变量覆盖）
+  NGINX_BASE_IMAGE: "harbor.dm.com/yss/nginx:1.21.4"
+  # 固定镜像标签（K8S/GitOps 清单中引用的不可变标签）
+  FIXED_IMAGE_TAG: "1.0.0"
+  # 是否同时推送 latest 标签
+  PUSH_LATEST: "true"
+  # 可选：是否在推送后对 K8S 执行滚动重启（默认关闭）
+  ENABLE_ROLLOUT_RESTART: "false"
+  K8S_NAMESPACE: ""
+  K8S_DEPLOYMENT_NAME: ""
+  KUBECTL_IMAGE: "bitnami/kubectl:1.28"
+  # 本地部署目录（当前 CI 服务器）
+  LOCAL_DEPLOY_DIR: "/opt/html/vue3/dataSource"
+
+# 构建阶段 - 使用 Docker 容器构建前端应用
+build:frontend:
+  stage: build
+  cache:
+    key: "$CI_COMMIT_REF_SLUG"
+    paths:
+      - node_modules/
+      - packages/node_modules/
+      - .pnpm-store/
+  before_script:
+    # 拉取 Node.js 镜像
+    - |
+      if [ -n "$HARBOR_USERNAME" ] && [ -n "$HARBOR_PASSWORD" ]; then
+        echo "$HARBOR_PASSWORD" | docker login -u "$HARBOR_USERNAME" --password-stdin $HARBOR_REGISTRY || true
+      fi
+    - docker pull $NODE_IMAGE
+  script:
+    # 在 Docker 容器中执行构建（无需挂载宿主机 docker.sock）
+    - docker run --rm --entrypoint=/bin/sh -e NPM_CONFIG_USERCONFIG=/workspace/.npmrc -e npm_config_userconfig=/workspace/.npmrc -v "$PWD:/workspace" -w /workspace $NODE_IMAGE -c "pnpm config set store-dir .pnpm-store && pnpm install --no-frozen-lockfile && pnpm run build"
+  artifacts:
+    name: "build-$CI_COMMIT_SHORT_SHA"
+    paths:
+      - packages/dist/
+    expire_in: 1 week
+  only:
+    - main
+
+# 打包阶段 - 构建 Docker 镜像
+package:docker:
+  stage: package
+  dependencies:
+    - build:frontend
+  before_script:
+    - |
+      if [ -n "$HARBOR_USERNAME" ] && [ -n "$HARBOR_PASSWORD" ]; then
+        echo "$HARBOR_PASSWORD" | docker login -u "$HARBOR_USERNAME" --password-stdin $HARBOR_REGISTRY || true
+      fi
+  script:
+    # 构建 Docker 镜像
+    - |
+      cat > Dockerfile << EOF
+      FROM ${NGINX_BASE_IMAGE}
+
+      # 设置工作目录
+      WORKDIR /usr/share/nginx/html
+
+      # 复制构建产物
+      COPY packages/dist/ .
+
+      # 复制 nginx 配置
+      COPY nginx.conf /etc/nginx/conf.d/default.conf
+
+      # 暴露端口
+      EXPOSE 80
+
+      # 启动 nginx
+      CMD ["nginx", "-g", "daemon off;"]
+      EOF
+
+    # 创建 nginx 配置文件
+    - |
+      cat > nginx.conf << EOF
+      server {
+          listen 80;
+          server_name localhost;
+
+          # 启用 gzip 压缩
+          gzip on;
+          gzip_vary on;
+          gzip_min_length 1024;
+          gzip_types text/plain text/css text/xml text/javascript application/javascript application/xml+rss application/json;
+
+          # 静态资源缓存
+          location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$ {
+              expires 1y;
+              add_header Cache-Control "public, immutable";
+          }
+
+          # 主页面
+          location / {
+              try_files \$uri \$uri/ /index.html;
+              add_header Cache-Control "no-cache";
+          }
+
+          # 健康检查
+          location /health {
+              access_log off;
+              return 200 "healthy\n";
+              add_header Content-Type text/plain;
+          }
+      }
+      EOF
+    # 构建并推送固定标签镜像（仅 1.0.0）
+    - |
+      IMAGE_TAG_FIXED="$HARBOR_REGISTRY/$HARBOR_PROJECT/$IMAGE_NAME:$FIXED_IMAGE_TAG"
+      echo "Docker build base tag: $IMAGE_TAG_SHA"
+      docker build --label commit_sha="$CI_COMMIT_SHA" -t "$IMAGE_TAG_FIXED" .
+      docker push "$IMAGE_TAG_FIXED"
+  after_script:
+    # 清理本地镜像
+    - docker rmi $HARBOR_REGISTRY/$HARBOR_PROJECT/$IMAGE_NAME:$FIXED_IMAGE_TAG || true
+    - docker image prune -f || true
+    - docker system prune -af || true
+  only:
+    - main
+
+deploy:dist:
+  stage: deploy
+  dependencies:
+    - build:frontend
+  script:
+    - |
+      set -e
+      echo "Deploying dist to $LOCAL_DEPLOY_DIR"
+      mkdir -p "$LOCAL_DEPLOY_DIR"
+      if command -v rsync >/main/null 2>&1; then
+        # 仅覆盖更新，不删除目标目录中其它子应用目录或历史文件
+        rsync -av packages/dist/ "$LOCAL_DEPLOY_DIR/"
+      else
+        echo "rsync 不可用，使用 cp 回退逻辑（不清空目标目录）"
+        cp -r packages/dist/* "$LOCAL_DEPLOY_DIR/"
+      fi
+  only:
+    - main
+
+deploy:rollout_restart:
+  stage: deploy
+  image: $KUBECTL_IMAGE
+  needs: ["package:docker"]
+  script:
+    - |
+      set -e
+      if [ "$ENABLE_ROLLOUT_RESTART" != "true" ]; then
+        echo "ENABLE_ROLLOUT_RESTART=false，跳过 K8S 滚动重启"
+        exit 0
+      fi
+      if [ -z "$KUBECONFIG_BASE64" ] || [ -z "$K8S_NAMESPACE" ] || [ -z "$K8S_DEPLOYMENT_NAME" ]; then
+        echo "KUBECONFIG_BASE64/K8S_NAMESPACE/K8S_DEPLOYMENT_NAME 未配置，跳过"
+        exit 0
+      fi
+      echo "$KUBECONFIG_BASE64" | base64 -d > kubeconfig
+      kubectl --kubeconfig kubeconfig -n "$K8S_NAMESPACE" rollout restart deploy/"$K8S_DEPLOYMENT_NAME"
+      kubectl --kubeconfig kubeconfig -n "$K8S_NAMESPACE" rollout status deploy/"$K8S_DEPLOYMENT_NAME" --timeout=180s
+  only:
+    - main

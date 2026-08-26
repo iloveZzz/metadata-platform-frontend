@@ -1,0 +1,362 @@
+/**
+ * 数据分类工作台样式表
+ * 严格对齐资产目录与企业级设计规范
+ */
+
+.data-category-page {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: #ffffff;
+  overflow: hidden;
+  box-sizing: border-box;
+
+  // 1. 顶部导航与控制栏
+  &__top-nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 20px;
+    height: 52px;
+    border-bottom: 1px solid #f1f5f9;
+    flex-shrink: 0;
+    background: #ffffff;
+
+    .nav-tabs {
+      display: flex;
+      align-items: center;
+      gap: 28px;
+      height: 100%;
+
+      .nav-tab-item {
+        position: relative;
+        display: flex;
+        align-items: center;
+        height: 100%;
+        font-size: 15px;
+        font-weight: 500;
+        color: #475569;
+        cursor: pointer;
+        transition: color 0.2s;
+
+        &:hover {
+          color: #2563eb;
+        }
+
+        &.is-active {
+          color: #0f172a;
+          font-weight: 600;
+
+          &::after {
+            content: "";
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: #2563eb;
+            border-radius: 2px 2px 0 0;
+          }
+        }
+      }
+    }
+
+    .nav-controls {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+
+      .status-checkbox {
+        font-size: 13px;
+        color: #1e293b;
+      }
+
+      .global-search-input {
+        width: 220px;
+        border-radius: 6px;
+      }
+
+      .create-btn {
+        border-radius: 6px;
+        background: #2563eb;
+        font-size: 13px;
+        display: inline-flex;
+        align-items: center;
+      }
+
+      .refresh-btn {
+        color: #64748b;
+        border-radius: 6px;
+
+        &:hover {
+          color: #2563eb;
+          border-color: #2563eb;
+        }
+      }
+    }
+  }
+
+  // 2. 主体骨架 (YSplitPane 占据全部剩余高度)
+  &__body {
+    flex: 1;
+    overflow: hidden;
+    min-height: 0;
+
+    .split-pane-wrapper {
+      height: 100%;
+      min-height: 0;
+    }
+  }
+}
+
+.category-right-content {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: 12px 16px;
+  overflow: hidden;
+  min-height: 0;
+  box-sizing: border-box;
+
+  .category-header-stats {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 0 12px 0;
+    background: transparent;
+    flex-shrink: 0;
+
+    .stats-left {
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+
+      .system-title {
+        font-size: 15px;
+        font-weight: 600;
+        color: #1f2937;
+      }
+
+      .count-number {
+        font-size: 20px;
+        font-weight: 700;
+        color: #111827;
+        line-height: 1;
+        margin: 0 2px;
+      }
+
+      .count-unit {
+        font-size: 13px;
+        color: #6b7280;
+      }
+
+      .visibility-tag {
+        font-size: 11px;
+        line-height: 18px;
+        height: 20px;
+        padding: 0 6px;
+        border-radius: 4px;
+        margin-left: 4px;
+      }
+
+      .info-icon {
+        font-size: 13px;
+        color: #9ca3af;
+        cursor: help;
+        transition: color 0.2s;
+
+        &:hover {
+          color: #2563eb;
+        }
+      }
+    }
+  }
+
+  // 关键：容器必须设置 flex: 1 + overflow: hidden 保证高度响应式精确计算
+  .category-table-area {
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+    position: relative;
+
+    :deep(.vxe-table--body-wrapper),
+    :deep(.ant-table-tbody) {
+      .vxe-body--row,
+      tr {
+        td {
+          padding-top: 10px !important;
+          padding-bottom: 10px !important;
+          vertical-align: middle;
+        }
+      }
+    }
+
+    :deep(.vxe-body--row.row--checked),
+    :deep(.vxe-table--body-wrapper .vxe-body--row.row--checked),
+    :deep(.ant-table-tbody > tr.ant-table-row-selected > td),
+    :deep(.vxe-table--body-wrapper tr.row--checked) {
+      background-color: #e6f4ff !important;
+    }
+  }
+}
+
+/* 单元格视觉细节 (严格对齐 meta-name-cell) */
+.category-name-cell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: 100%;
+
+  .category-icon-box {
+    width: 24px;
+    height: 24px;
+    border-radius: 4px;
+    background: #2563eb;
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    flex-shrink: 0;
+  }
+
+  .category-info-box {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    overflow: hidden;
+    min-width: 0;
+
+    .category-name-link {
+      color: #1e293b;
+      font-weight: 600;
+      font-size: 13px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      cursor: pointer;
+
+      &:hover {
+        color: #2563eb;
+        text-decoration: underline;
+      }
+    }
+
+    .category-desc-sub {
+      color: #94a3b8;
+      font-size: 12px;
+      line-height: 1.2;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+  }
+}
+
+.category-code-text {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 12px;
+  color: #475569;
+  font-weight: 500;
+}
+
+.grade-pill-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 1px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 18px;
+}
+
+.priority-shield-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 1px 8px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #d46b08;
+  background: #fff7e6;
+  border: 1px solid #ffd591;
+}
+
+.active-fields-link {
+  color: #2563eb;
+  font-size: 13px;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.header-info-icon {
+  margin-left: 4px;
+  font-size: 13px;
+  color: #94a3b8;
+  cursor: help;
+  transition: color 0.2s;
+
+  &:hover {
+    color: #2563eb;
+  }
+}
+
+.category-actions {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 2px;
+
+  .action-icon-btn {
+    padding: 2px 6px;
+    font-size: 14px;
+    color: #475569;
+
+    &:hover:not(:disabled) {
+      color: #2563eb;
+      background: #eff6ff;
+      border-radius: 4px;
+    }
+  }
+}
+
+.custom-empty-state {
+  padding: 40px 0;
+}
+
+.floating-batch-bar {
+  flex-shrink: 0;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 8px 16px;
+  margin-top: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+
+  .batch-bar-left {
+    font-size: 13px;
+    color: #334155;
+
+    .highlight-count {
+      color: #2563eb;
+      font-weight: 600;
+    }
+  }
+
+  .batch-bar-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+}

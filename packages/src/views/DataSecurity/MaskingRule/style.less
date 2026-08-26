@@ -1,0 +1,194 @@
+.masking-rule-page {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-sizing: border-box;
+
+  .top-page-header {
+    background: #ffffff;
+    border-radius: 6px;
+    padding: 8px 16px 0 16px;
+    margin-bottom: 12px;
+    border: 1px solid #f0f0f0;
+    flex-shrink: 0;
+
+    .header-layout {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+
+      .page-main-tabs {
+        flex: 1;
+
+        :deep(.ant-tabs-nav) {
+          margin-bottom: 0;
+          &::before {
+            border-bottom: none;
+          }
+        }
+
+        :deep(.ant-tabs-tab) {
+          padding: 12px 16px;
+          font-size: 14px;
+          font-weight: 500;
+        }
+
+        :deep(.ant-tabs-tab-active) {
+          font-weight: 600;
+        }
+      }
+
+      .header-actions {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 8px;
+      }
+    }
+  }
+
+  .content-card {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border-radius: 6px;
+    background: #ffffff;
+    border: 1px solid #f0f0f0;
+
+    :deep(.ant-card-body),
+    :deep(.y-card-body) {
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      padding: 16px;
+    }
+
+    .filter-search-section {
+      background: #fafbfc;
+      border: 1px solid #f0f2f5;
+      border-radius: 6px;
+      padding: 12px 16px;
+      margin-bottom: 12px;
+      flex-shrink: 0;
+
+      .search-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 10px;
+
+        .search-input {
+          max-width: 380px;
+        }
+      }
+
+      .filter-type-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+
+        .type-label {
+          font-size: 13px;
+          color: #595959;
+          margin-right: 12px;
+          white-space: nowrap;
+        }
+
+        .type-radios {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+
+          .type-pill-btn {
+            border-radius: 4px;
+            font-size: 12px;
+            padding: 2px 12px;
+            height: 28px;
+            cursor: pointer;
+            border: 1px solid #d9d9d9;
+            background: #ffffff;
+            color: #595959;
+            transition: all 0.2s ease;
+
+            &:hover {
+              color: var(--ant-primary-color, #1677ff);
+              border-color: var(--ant-primary-color, #1677ff);
+            }
+
+            &.active {
+              background: var(--ant-primary-1, #e6f4ff);
+              border-color: var(--ant-primary-color, #1677ff);
+              color: var(--ant-primary-color, #1677ff);
+              font-weight: 500;
+            }
+          }
+        }
+
+        .expand-toggle {
+          color: #8c8c8c;
+          font-size: 12px;
+          cursor: pointer;
+          &:hover {
+            color: var(--ant-primary-color, #1677ff);
+          }
+        }
+      }
+    }
+
+    .table-container {
+      flex: 1;
+      min-height: 0;
+      overflow: hidden;
+    }
+  }
+
+  .rule-name-cell {
+    display: flex;
+    flex-direction: column;
+    .rule-name-title {
+      font-weight: 600;
+      color: #1f2329;
+      font-size: 13px;
+    }
+    .rule-sub-text {
+      font-size: 11px;
+      color: #8c8c8c;
+      margin-top: 2px;
+    }
+  }
+
+  .scene-tag-box {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 12px;
+    color: #434343;
+
+    .scene-item {
+      display: inline-flex;
+      align-items: center;
+      .dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        margin-right: 6px;
+        background: #1677ff;
+      }
+      &.dev-table .dot {
+        background: #52c41a;
+      }
+    }
+  }
+
+  .sim-eval-box {
+    margin-top: 16px;
+    padding: 12px;
+    background-color: #fafafa;
+    border-radius: 4px;
+  }
+}

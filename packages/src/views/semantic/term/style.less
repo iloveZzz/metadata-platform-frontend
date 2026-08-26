@@ -1,0 +1,72 @@
+/**
+ * 术语管理页样式
+ * 仅消费语义 token（variables.less）与 Ant Design 组件语义，禁止硬编码品牌色。
+ */
+.term-page {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+  background: #fff;
+  border-radius: 8px;
+}
+
+.term-page__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.term-page__title {
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.term-page__desc {
+  margin-top: 2px;
+  font-size: 12px;
+  color: rgba(0, 0, 0, 0.45);
+}
+
+.term-page__readonly-banner {
+  margin-bottom: 12px;
+}
+
+.term-page__search {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.term-page__error {
+  margin-bottom: 12px;
+}
+
+.term-page__table-area {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.term-page__empty {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.term-page__name-link {
+  padding: 0 !important;
+  height: auto !important;
+}
+
+.term-page__muted {
+  color: rgba(0, 0, 0, 0.45);
+}

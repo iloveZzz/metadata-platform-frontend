@@ -1,0 +1,187 @@
+/**
+ * 血缘图谱页 - 样式（含 SVG 画布/节点/边）
+ * 仅消费主题语义 Token（variables.less / 运行时主题同步），禁止硬编码品牌色。
+ * 节点角色色：中心=主色、上游=成功语义绿、下游=警告语义黄（原型方向语义映射，随主题 Token 换肤）；
+ * 边线实线=自动置信度（主色）、虚线=人工/低置信（次要文字色）。
+ */
+@import url("@/styles/variables.less");
+
+.lineage-page {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+
+  &__card {
+    height: 100%;
+    background: var(--bg-color-container, #fff);
+    border: 1px solid var(--border-color-split, #f0f0f0);
+
+    :deep(.ant-card-body) {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      padding: 16px;
+      min-height: 0;
+      overflow: auto;
+    }
+  }
+
+  &__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 8px;
+  }
+
+  &__title {
+    margin-top: 8px;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-color, rgba(0, 0, 0, 0.88));
+  }
+
+  &__desc {
+    margin-top: 4px;
+    color: var(--text-color-secondary, rgba(0, 0, 0, 0.65));
+    font-size: 13px;
+  }
+
+  &__breadcrumb-link {
+    color: var(--primary-color, #3371ff);
+    cursor: pointer;
+
+    &:hover {
+      color: var(--primary-color-hover, #4096ff);
+    }
+  }
+
+  &__legend {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 16px;
+    padding: 4px 0 12px;
+    color: var(--text-color-secondary, rgba(0, 0, 0, 0.65));
+    font-size: 12px;
+
+    &-line {
+      display: inline-block;
+      width: 22px;
+      height: 0;
+      margin-right: 6px;
+      vertical-align: middle;
+      border-top-width: 2px;
+
+      &--solid {
+        border-top-style: solid;
+        border-top-color: var(--primary-color, #3371ff);
+      }
+
+      &--dashed {
+        border-top-style: dashed;
+        border-top-color: var(--text-color-secondary, rgba(0, 0, 0, 0.65));
+      }
+    }
+  }
+
+  &__error {
+    margin-bottom: 12px;
+  }
+
+  &__canvas-area {
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
+    border: 1px solid var(--border-color-split, #f0f0f0);
+    border-radius: @border-radius-base;
+    background: var(--bg-color, #f0f2f5);
+  }
+
+  &__empty {
+    padding: 48px 0;
+  }
+}
+
+/* ============ SVG 画布（LineageGraphCanvas 共享） ============ */
+.lineage-graph-canvas {
+  display: inline-block;
+  min-width: 100%;
+
+  svg {
+    display: block;
+  }
+
+  &__node {
+    cursor: pointer;
+
+    &-circle {
+      fill: var(--bg-color-container, #fff);
+      stroke: var(--border-color, #d9d9d9);
+      stroke-width: 1.5;
+    }
+
+    &-label {
+      fill: var(--text-color, rgba(0, 0, 0, 0.88));
+      font-size: 12px;
+    }
+
+    /* 中心资产高亮（主色语义） */
+    &--center {
+      .lineage-graph-canvas__node-circle {
+        fill: color-mix(in srgb, var(--primary-color, #3371ff) 10%, transparent);
+        stroke: var(--primary-color, #3371ff);
+        stroke-width: 2;
+      }
+
+      .lineage-graph-canvas__node-label {
+        fill: var(--primary-color, #3371ff);
+        font-weight: 600;
+      }
+    }
+
+    /* 上游=成功语义绿（原型方向语义映射） */
+    &--upstream {
+      .lineage-graph-canvas__node-circle {
+        fill: color-mix(in srgb, var(--success-color, #52c41a) 8%, transparent);
+        stroke: var(--success-color, #52c41a);
+      }
+    }
+
+    /* 下游=警告语义黄（原型方向语义映射） */
+    &--downstream {
+      .lineage-graph-canvas__node-circle {
+        fill: color-mix(in srgb, var(--warning-color, #faad14) 8%, transparent);
+        stroke: var(--warning-color, #faad14);
+      }
+    }
+  }
+
+  &__edge {
+    &-line--solid {
+      stroke: var(--primary-color, #3371ff);
+      stroke-width: 1.5;
+    }
+
+    &-line--dashed {
+      stroke: var(--text-color-secondary, rgba(0, 0, 0, 0.65));
+      stroke-width: 1.5;
+      stroke-dasharray: 5 4;
+    }
+  }
+}
+
+/* ============ 人工补录编辑器（LineageEditor 共享） ============ */
+.lineage-editor {
+  &__alert {
+    margin-bottom: 12px;
+  }
+
+  &__footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+  }
+}

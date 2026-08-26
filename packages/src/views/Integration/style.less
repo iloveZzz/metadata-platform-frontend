@@ -1,0 +1,82 @@
+/**
+ * 集成配置页 - 样式
+ * 只消费主题语义 Token（variables.less / 运行时主题同步），禁止硬编码品牌色。
+ */
+@import url("@/styles/variables.less");
+
+.integration-page {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+
+  &__card {
+    height: 100%;
+    background: var(--bg-color-container, #fff);
+    border: 1px solid var(--border-color-split, #f0f0f0);
+
+    :deep(.ant-card-body) {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      padding: 16px;
+    }
+  }
+
+  &__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  &__title {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-color, rgba(0, 0, 0, 0.88));
+  }
+
+  &__desc {
+    margin-top: 4px;
+    font-size: 13px;
+    color: var(--text-color-secondary, rgba(0, 0, 0, 0.65));
+  }
+
+  &__error {
+    margin-bottom: 16px;
+  }
+
+  &__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 16px;
+    align-items: start;
+  }
+
+  &__actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 16px;
+  }
+
+  &__meta {
+    font-size: 13px;
+    color: var(--text-color-secondary, rgba(0, 0, 0, 0.65));
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  &__task-id {
+    color: var(--text-color, rgba(0, 0, 0, 0.88));
+    word-break: break-all;
+  }
+
+  &__tip {
+    margin-top: 12px;
+  }
+}

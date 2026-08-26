@@ -1,0 +1,360 @@
+/**
+ * 采集实例页面样式表
+ * 严格遵循 yss-use-table-height 与 Ant Design 企业级设计规范
+ */
+
+.collector-instance-page {
+  padding: 16px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  box-sizing: border-box;
+
+  .collector-instance-card {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    min-height: 0;
+    border-radius: 8px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+
+    :deep(.ant-card-body) {
+      padding: 16px 20px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      min-height: 0;
+    }
+  }
+
+  .instance-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    flex-shrink: 0;
+
+    &__left {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+
+      .custom-checkbox {
+        font-size: 13px;
+        color: #475569;
+
+        &--danger {
+          :deep(.ant-checkbox-checked .ant-checkbox-inner) {
+            background-color: #ef4444;
+            border-color: #ef4444;
+          }
+        }
+      }
+    }
+
+    &__right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+
+      .search-input {
+        width: 260px;
+      }
+    }
+  }
+
+  // 关键：容器必须设置 flex: 1 + overflow: hidden 保证高度响应式精确计算
+  .instance-table-area {
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+    position: relative;
+
+    :deep(.vxe-table--body-wrapper),
+    :deep(.ant-table-tbody) {
+      .vxe-body--row,
+      tr {
+        td {
+          padding-top: 10px !important;
+          padding-bottom: 10px !important;
+          vertical-align: middle;
+        }
+      }
+    }
+  }
+}
+
+.instance-name-cell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 42px;
+  padding: 2px 0;
+  max-width: 100%;
+
+  .name-icon-box {
+    width: 26px;
+    height: 26px;
+    border-radius: 4px;
+    background: #2563eb;
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    flex-shrink: 0;
+  }
+
+  .name-info {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    overflow: hidden;
+    min-width: 0;
+
+    .name-title {
+      color: #1e293b;
+      font-weight: 600;
+      font-size: 13px;
+      line-height: 18px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+
+      &:hover {
+        color: #2563eb;
+        text-decoration: underline;
+      }
+    }
+
+    .name-sub {
+      color: #94a3b8;
+      font-size: 12px;
+      line-height: 16px;
+      margin-top: 2px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+  }
+}
+
+.datasource-type-tag {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #1e293b;
+}
+
+.datasource-cell {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+
+  .env-badge {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 0 4px;
+    border-radius: 2px;
+    flex-shrink: 0;
+
+    &.dev {
+      color: #ea580c;
+      background: #fff7ed;
+      border: 1px solid #ffedd5;
+    }
+    &.prod {
+      color: #9333ea;
+      background: #faf5ff;
+      border: 1px solid #f3e8ff;
+    }
+  }
+
+  .connector-name-text {
+    color: #475569;
+    font-size: 13px;
+  }
+}
+
+.owner-text,
+.executor-text {
+  color: #475569;
+  font-size: 13px;
+}
+
+.mode-cell {
+  font-size: 13px;
+  line-height: 1.4;
+
+  .mode-title {
+    color: #1e293b;
+    line-height: 18px;
+  }
+  .mode-sub {
+    color: #64748b;
+    font-size: 11px;
+    line-height: 16px;
+    margin-top: 1px;
+  }
+}
+
+.instance-status-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  .status-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 13px;
+
+    .status-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+
+      &.running-dot {
+        background-color: #2563eb;
+      }
+      &.pending-dot {
+        background-color: #d97706;
+      }
+    }
+
+    &.success {
+      color: #16a34a;
+    }
+
+    &.failed {
+      color: #dc2626;
+    }
+
+    &.running {
+      color: #2563eb;
+    }
+
+    &.pending {
+      color: #d97706;
+    }
+
+    .log-quick-link {
+      color: #2563eb;
+      font-size: 12px;
+      cursor: pointer;
+      margin-left: 2px;
+
+      &:hover {
+        color: #1d4ed8;
+      }
+    }
+  }
+}
+
+.duration-cell {
+  font-size: 12px;
+  line-height: 1.4;
+  color: #1e293b;
+
+  .duration-title {
+    line-height: 18px;
+  }
+
+  .duration-time-sub {
+    color: #94a3b8;
+    font-size: 11px;
+    line-height: 16px;
+    margin-top: 1px;
+  }
+}
+
+.instance-actions {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 2px;
+
+  .action-icon-btn {
+    padding: 2px 6px;
+    font-size: 14px;
+    color: #475569;
+
+    &:hover:not(:disabled) {
+      color: #2563eb;
+      background: #eff6ff;
+      border-radius: 4px;
+    }
+
+    &--rerun:hover:not(:disabled) {
+      color: #16a34a;
+      background: #f0fdf4;
+    }
+
+    &--stop:hover:not(:disabled) {
+      color: #dc2626;
+      background: #fef2f2;
+    }
+  }
+}
+
+.floating-batch-bar {
+  position: absolute;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #1e293b;
+  color: #ffffff;
+  padding: 10px 20px;
+  border-radius: 28px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  z-index: 100;
+
+  .batch-bar__info {
+    font-size: 13px;
+    color: #e2e8f0;
+  }
+
+  .batch-bar__actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+}
+
+.custom-empty-state {
+  padding: 40px 0;
+}
+
+.text-primary {
+  color: #2563eb;
+}
+.font-medium {
+  font-weight: 500;
+}
+.font-bold {
+  font-weight: 600;
+}
+
+.fade-enter-active,
+.fade-leave-active {
+  transition:
+    opacity 0.25s,
+    transform 0.25s;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+  transform: translate(-50%, 15px);
+}
