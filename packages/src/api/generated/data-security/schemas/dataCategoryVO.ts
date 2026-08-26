@@ -16,6 +16,8 @@ export interface DataCategoryVO {
   disablePolicy?: DataCategoryVODisablePolicy;
   id?: number;
   priority?: number;
+  recognitionFeatures?: string[];
+  scanDimensionConfig?: any;
   securityGradeId?: number;
   securityGradeName?: string;
   sensitivityScore?: number;

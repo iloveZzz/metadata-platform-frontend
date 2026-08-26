@@ -379,7 +379,7 @@ const onCheckboxChange = (params: any) => {
 const onTreeSelect = (keys: any[], info: any) => {
   onTreeSelectInternal(keys, info);
   const selectedId = keys.length > 0 ? keys[0] : 0;
-  filterParams.treeNodeId = selectedId > 0 ? Number(selectedId) : undefined;
+  filterParams.treeNodeId = selectedId && selectedId !== 0 && selectedId !== '0' && selectedId !== 'all' ? selectedId : undefined;
   pagination.current = 1;
   fetchList();
 };

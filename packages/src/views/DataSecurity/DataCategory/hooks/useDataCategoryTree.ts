@@ -10,14 +10,24 @@ export function useDataCategoryTree() {
   const selectedKey = ref<number | string | null>(null);
   const selectedNode = ref<CategoryTreeNodeVO | null>(null);
 
+  const findNodeById = (nodes: CategoryTreeNodeVO[], id: number | string): CategoryTreeNodeVO | null => {
+    for (const node of nodes) {
+      if (node.id === id) return node;
+      if (node.children && node.children.length > 0) {
+        const found = findNodeById(node.children, id);
+        if (found) return found;
+      }
+    }
+    return null;
+  };
+
   const fetchTree = async () => {
     treeLoading.value = true;
     try {
       const res = await api.getCategoryTree();
       treeData.value = res.data || [];
-      if (treeData.value.length > 0 && selectedKey.value === null) {
-        selectedKey.value = treeData.value[0].id!;
-        selectedNode.value = treeData.value[0];
+      if (selectedKey.value && selectedKey.value !== 0 && selectedKey.value !== 'all') {
+        selectedNode.value = findNodeById(treeData.value, selectedKey.value);
       }
     } catch (err: any) {
       message.error(err?.message || '加载分类目录树失败');

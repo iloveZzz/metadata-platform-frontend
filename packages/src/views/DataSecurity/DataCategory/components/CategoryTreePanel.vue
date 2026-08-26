@@ -64,7 +64,7 @@
         <FolderOpenFilled class="summary-icon" />
         <span class="summary-text">全部分类对象</span>
       </div>
-      <span class="summary-count">({{ totalCategories }})</span>
+      <span class="summary-count">({{ allCategoriesCount }})</span>
     </div>
 
     <!-- 4. 单一搜索框 (严格对齐资产目录输入框样式) -->
@@ -218,6 +218,11 @@ const computeRecursiveNode = (node: CategoryTreeNodeVO): any => {
 
 const computedTreeData = computed(() => {
   return props.treeData.map(computeRecursiveNode);
+});
+
+const allCategoriesCount = computed(() => {
+  const treeTotal = computedTreeData.value.reduce((sum: number, n: any) => sum + (n.categoryCount ?? 0), 0);
+  return Math.max(treeTotal, props.totalCategories ?? 0);
 });
 
 // 树搜索过滤

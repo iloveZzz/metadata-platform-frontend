@@ -1,10 +1,10 @@
 <template>
-  <div class="feature-condition-builder-wrapper" :class="{ 'is-disabled': disabled }">
+  <div class="category-condition-builder-wrapper" :class="{ 'is-disabled': disabled }">
     <YConditionBuilder
       ref="conditionBuilderRef"
       v-model="model"
       :max-depth="maxDepth"
-      :operator-options="allOperatorOptions"
+      :operator-options="categoryAllOperatorOptions"
       :get-operators="getOperators"
       :load-fields="loadFields"
       :load-values="loadValues"
@@ -17,25 +17,32 @@
 
 <script setup lang="ts">
 import { ref } from 'vue';
+import { message } from 'ant-design-vue';
 import { YConditionBuilder, type ConditionGroup } from '@yss-ui/components';
-import { useFeatureCondition, allOperatorOptions } from '../hooks/useFeatureCondition';
+import {
+  useCategoryRuleCondition,
+  categoryAllOperatorOptions,
+  countCategoryRules,
+} from '../hooks/useCategoryRuleCondition';
 
-defineOptions({ name: 'FeatureConditionBuilder' });
+defineOptions({ name: 'CategoryConditionBuilder' });
 
 const model = defineModel<ConditionGroup>({ required: true });
 
-withDefaults(
+const props = withDefaults(
   defineProps<{
     disabled?: boolean;
     readonly?: boolean;
     maxDepth?: number;
     strictMode?: boolean;
+    maxRules?: number;
   }>(),
   {
     disabled: false,
     readonly: false,
-    maxDepth: 5,
+    maxDepth: 2,
     strictMode: true,
+    maxRules: 5,
   }
 );
 
@@ -43,7 +50,7 @@ const emit = defineEmits<{
   (e: 'validate', valid: boolean): void;
 }>();
 
-const { loadFields, getOperators, loadValues } = useFeatureCondition();
+const { loadFields, getOperators, loadValues } = useCategoryRuleCondition();
 
 const conditionBuilderRef = ref<any>(null);
 
@@ -52,6 +59,15 @@ function handleValidate(valid: boolean) {
 }
 
 function validate(): boolean {
+  const total = countCategoryRules(model.value);
+  if (total < 1) {
+    message.error('至少需要配置 1 条数据分类规则');
+    return false;
+  }
+  if (total > (props.maxRules || 5)) {
+    message.error(`数据分类规则最多支持配置 ${props.maxRules || 5} 条，当前已配置 ${total} 条`);
+    return false;
+  }
   if (conditionBuilderRef.value && typeof conditionBuilderRef.value.validate === 'function') {
     return conditionBuilderRef.value.validate();
   }
@@ -60,6 +76,7 @@ function validate(): boolean {
 
 defineExpose({
   validate,
+  getRuleCount: () => countCategoryRules(model.value),
   getValue: () => conditionBuilderRef.value?.getValue?.() || model.value,
   setValue: (v: ConditionGroup) => {
     if (conditionBuilderRef.value?.setValue) {
@@ -72,7 +89,7 @@ defineExpose({
 </script>
 
 <style scoped lang="less">
-.feature-condition-builder-wrapper {
+.category-condition-builder-wrapper {
   width: 100%;
   border-radius: 6px;
   background: #fafafa;
@@ -97,7 +114,7 @@ defineExpose({
         margin-bottom: 8px;
 
         .field-select {
-          min-width: 150px;
+          min-width: 160px;
         }
 
         .operator-select {

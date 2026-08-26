@@ -811,7 +811,9 @@ const handleSetMasking = (row: DataCategoryVO) => {
 const handleExport = async () => {
   try {
     const res = await api.exportCategories(
-      selectedKey.value && selectedKey.value !== 0 ? Number(selectedKey.value) : undefined,
+      selectedKey.value && selectedKey.value !== 0 && selectedKey.value !== '0' && selectedKey.value !== 'all'
+        ? (selectedKey.value as any)
+        : undefined,
       searchKeyword.value || undefined,
       undefined
     );

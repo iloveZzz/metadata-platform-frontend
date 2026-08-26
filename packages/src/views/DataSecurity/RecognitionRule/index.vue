@@ -308,8 +308,8 @@ const handleRefresh = () => {
   query({});
 };
 
-const handleSelectionChange = (keys: number[]) => {
-  selectedRowKeys.value = keys;
+const handleSelectionChange = (payload: any) => {
+  selectedRowKeys.value = payload?.keys || (Array.isArray(payload) ? payload : []);
 };
 
 // 详情

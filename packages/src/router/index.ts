@@ -1,17 +1,14 @@
 import type { RouteRecordRaw } from 'vue-router';
 import {
   ApiOutlined,
-  AuditOutlined,
   BookOutlined,
   CloudSyncOutlined,
-  DashboardOutlined,
   DatabaseOutlined,
   FileSearchOutlined,
   FolderOutlined,
   FundProjectionScreenOutlined,
   HistoryOutlined,
   KeyOutlined,
-  LinkOutlined,
   ProfileOutlined,
   SafetyCertificateOutlined,
   ScanOutlined,
@@ -132,67 +129,6 @@ const menuRoutes: RouteRecordRaw[] = [
               title: '指标对齐与冲突',
               icon: BookOutlined,
               keepAlive: true,
-            },
-          },
-        ],
-      },
-      {
-        path: 'group-dq',
-        name: 'GroupDataQuality',
-        meta: {
-          title: '数据质量与健康',
-          isGroup: true,
-        },
-        children: [
-          {
-            path: '/dq/dashboard',
-            name: 'DqDashboard',
-            component: () => import('@/views/dq-insight/dashboard/index.vue'),
-            meta: {
-              title: '健康分仪表盘',
-              icon: DashboardOutlined,
-              keepAlive: true,
-            },
-          },
-          {
-            path: '/dq/health',
-            name: 'DqHealth',
-            component: () => import('@/views/dq-insight/health/index.vue'),
-            meta: {
-              title: '资产健康分',
-              icon: FileSearchOutlined,
-              keepAlive: true,
-            },
-          },
-          {
-            path: '/dq/channels',
-            name: 'DqChannels',
-            component: () => import('@/views/dq-insight/channels/index.vue'),
-            meta: {
-              title: '通道管理',
-              icon: ApiOutlined,
-              keepAlive: true,
-            },
-          },
-          {
-            path: '/dq/asset-linkage',
-            name: 'DqAssetLinkage',
-            component: () => import('@/views/dq-insight/linkage/index.vue'),
-            meta: {
-              title: '待关联资产',
-              icon: LinkOutlined,
-              keepAlive: true,
-            },
-          },
-          {
-            path: '/dq/audit-logs',
-            name: 'DqAuditLogs',
-            component: () => import('@/views/dq-insight/audit-logs/index.vue'),
-            meta: {
-              title: '质量审计',
-              icon: AuditOutlined,
-              keepAlive: true,
-              adminOnly: true,
             },
           },
         ],
@@ -418,27 +354,6 @@ const hiddenAndSpecialRoutes: RouteRecordRaw[] = [
     meta: {
       title: '影响分析',
       keepAlive: true,
-      hidden: true,
-    },
-  },
-  // 数据质量详情相关内嵌/子路由
-  {
-    path: '/dq/health/:assetId',
-    name: 'DqHealthDetail',
-    component: () => import('@/views/dq-insight/health/detail.vue'),
-    meta: {
-      title: '健康分详情',
-      keepAlive: false,
-      hidden: true,
-    },
-  },
-  {
-    path: '/dq/health/:assetId/rules',
-    name: 'DqHealthRules',
-    component: () => import('@/views/dq-insight/health/rules.vue'),
-    meta: {
-      title: '规则明细钻取',
-      keepAlive: false,
       hidden: true,
     },
   },

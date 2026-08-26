@@ -29,28 +29,59 @@ export const CATEGORY_COLUMNS: YTableColumn[] = [
   { title: '操作', field: 'action', width: 140, align: 'center', fixed: 'right', slots: { default: 'action' } },
 ];
 
-export const getPriorityTagColor = (p?: number) => {
-  if (p === 1) return '#ff4d4f';
-  if (p === 2) return '#fa8c16';
-  if (p === 3) return '#faad14';
-  if (p === 4) return '#1890ff';
-  return '#8c8c8c';
+/**
+ * 优先级 Tag 预设颜色（Ant Design 语义预设状态）
+ */
+export const getPriorityTagColor = (p?: number): string => {
+  if (p === 1) return 'error';
+  if (p === 2) return 'warning';
+  if (p === 3) return 'orange';
+  if (p === 4) return 'processing';
+  return 'default';
 };
 
+/**
+ * 数据分级 Tag 动态 Token 样式（使用 CSS 变量与 color-mix，消除硬编码十六进制）
+ */
 export const getGradeTagStyle = (score?: number, code?: string) => {
   if (code === 'L5' || (score && score >= 90)) {
-    return { color: '#cf1322', bg: '#fff1f0', border: '#ffa39e', label: 'L5' };
+    return {
+      color: 'var(--error-color, #f5222d)',
+      bg: 'color-mix(in srgb, var(--error-color, #f5222d) 10%, transparent)',
+      border: 'color-mix(in srgb, var(--error-color, #f5222d) 30%, transparent)',
+      label: 'L5',
+    };
   }
   if (code === 'L4' || (score && score >= 70)) {
-    return { color: '#d4380d', bg: '#fff2e8', border: '#ffbb96', label: 'L4' };
+    return {
+      color: '#d4380d',
+      bg: 'color-mix(in srgb, #d4380d 10%, transparent)',
+      border: 'color-mix(in srgb, #d4380d 30%, transparent)',
+      label: 'L4',
+    };
   }
   if (code === 'L3' || (score && score >= 50)) {
-    return { color: '#d46b08', bg: '#fff7e6', border: '#ffd591', label: 'L3' };
+    return {
+      color: 'var(--warning-color, #faad14)',
+      bg: 'color-mix(in srgb, var(--warning-color, #faad14) 10%, transparent)',
+      border: 'color-mix(in srgb, var(--warning-color, #faad14) 30%, transparent)',
+      label: 'L3',
+    };
   }
   if (code === 'L2' || (score && score >= 30)) {
-    return { color: '#389e0d', bg: '#f6ffed', border: '#b7eb8f', label: 'L2' };
+    return {
+      color: 'var(--success-color, #52c41a)',
+      bg: 'color-mix(in srgb, var(--success-color, #52c41a) 10%, transparent)',
+      border: 'color-mix(in srgb, var(--success-color, #52c41a) 30%, transparent)',
+      label: 'L2',
+    };
   }
-  return { color: '#096dd9', bg: '#e6f7ff', border: '#91d5ff', label: 'L1' };
+  return {
+    color: 'var(--primary-color, #3371ff)',
+    bg: 'color-mix(in srgb, var(--primary-color, #3371ff) 10%, transparent)',
+    border: 'color-mix(in srgb, var(--primary-color, #3371ff) 30%, transparent)',
+    label: 'L1',
+  };
 };
 
 export const formatDirPath = (row: DataCategoryVO) => {

@@ -22,20 +22,45 @@ export const computeAllOperatorOptions: OperatorOption[] = [
 export const datasourceFieldOptions: OptionItem[] = [
   { label: '表全名', value: 'TABLE_NAME' },
   { label: '表描述', value: 'TABLE_COMMENT' },
-  { label: '数据库 (DB)', value: 'DB_NAME' },
-  { label: 'Schema', value: 'SCHEMA_NAME' },
+  { label: 'db/schema', value: 'DB_SCHEMA' },
   { label: '资产清单标签', value: 'TAG' },
 ];
 
-/** 数据源指定表过滤操作符选项 */
+/** 数据源指定表过滤全部操作符选项（供 YConditionBuilder 匹配） */
 export const datasourceAllOperatorOptions: OperatorOption[] = [
-  { label: '前缀为', value: 'PREFIX', kind: 'single' },
-  { label: '后缀为', value: 'SUFFIX', kind: 'single' },
+  { label: '前缀匹配', value: 'PREFIX', kind: 'single' },
+  { label: '后缀匹配', value: 'SUFFIX', kind: 'single' },
   { label: '包含', value: 'CONTAINS', kind: 'single' },
-  { label: '属于', value: 'IN', kind: 'single' },
-  { label: '包含任一', value: 'TAG_ANY', kind: 'single' },
-  { label: '包含所有', value: 'TAG_ALL', kind: 'single' },
+  { label: '属于', value: 'IN', kind: 'multiple' },
+  { label: '包含任一', value: 'TAG_ANY', kind: 'multiple' },
+  { label: '包含所有', value: 'TAG_ALL', kind: 'multiple' },
 ];
+
+/** 各过滤维度的专属操作符映射矩阵 */
+export const datasourceOperatorsByField: Record<string, OperatorOption[]> = {
+  TABLE_NAME: [
+    { label: '前缀匹配', value: 'PREFIX', kind: 'single' },
+    { label: '后缀匹配', value: 'SUFFIX', kind: 'single' },
+    { label: '包含', value: 'CONTAINS', kind: 'single' },
+  ],
+  TABLE_COMMENT: [
+    { label: '包含', value: 'CONTAINS', kind: 'single' },
+  ],
+  DB_SCHEMA: [
+    { label: '属于', value: 'IN', kind: 'multiple' },
+  ],
+  // 兼容 DB_NAME / SCHEMA_NAME
+  DB_NAME: [
+    { label: '属于', value: 'IN', kind: 'multiple' },
+  ],
+  SCHEMA_NAME: [
+    { label: '属于', value: 'IN', kind: 'multiple' },
+  ],
+  TAG: [
+    { label: '包含任一', value: 'TAG_ANY', kind: 'multiple' },
+    { label: '包含所有', value: 'TAG_ALL', kind: 'multiple' },
+  ],
+};
 
 export function generateConditionId(prefix = 'rule'): string {
   return `${prefix}_${Math.random().toString(36).substring(2, 9)}`;
@@ -68,7 +93,7 @@ export function createInitialDatasourceFilterCondition(): ConditionGroup {
         id: generateConditionId('ds_leaf'),
         type: 'LEAF',
         field: 'TABLE_NAME',
-        operator: 'CONTAINS',
+        operator: 'PREFIX',
         value: '',
       },
     ],
@@ -149,6 +174,19 @@ export function normalizeDatasourceFilterCondition(raw: any): ConditionGroup {
     }
   }
 
+  const mapField = (f: string) => {
+    if (f === 'DB_NAME' || f === 'SCHEMA_NAME') return 'DB_SCHEMA';
+    return f || 'TABLE_NAME';
+  };
+
+  const mapOperator = (field: string, op: string) => {
+    const f = mapField(field);
+    const validOps = (datasourceOperatorsByField[f] || []).map(o => o.value);
+    if (validOps.includes(op)) return op;
+    // 默认回退到该字段的第一个可用操作符
+    return validOps[0] || 'CONTAINS';
+  };
+
   if (raw.type === 'GROUP' && Array.isArray(raw.children)) {
     return {
       id: raw.id || generateConditionId('ds_root'),
@@ -158,12 +196,13 @@ export function normalizeDatasourceFilterCondition(raw: any): ConditionGroup {
         if (child.type === 'GROUP' || Array.isArray(child.children)) {
           return normalizeDatasourceFilterCondition(child);
         }
+        const field = mapField(child.field);
         return {
           id: child.id || generateConditionId('leaf'),
           type: 'LEAF',
-          field: child.field || 'TABLE_NAME',
-          operator: child.operator || 'CONTAINS',
-          value: child.value || '',
+          field,
+          operator: mapOperator(field, child.operator),
+          value: child.value ?? '',
         };
       }),
     };
@@ -175,13 +214,16 @@ export function normalizeDatasourceFilterCondition(raw: any): ConditionGroup {
       id: raw.id || generateConditionId('ds_root'),
       type: 'GROUP',
       logicalOp: raw.filterLogic === 'OR' ? 'OR' : 'AND',
-      children: raw.filters.map((item: any) => ({
-        id: item.id || generateConditionId('leaf'),
-        type: 'LEAF',
-        field: item.field || 'TABLE_NAME',
-        operator: item.operator || 'CONTAINS',
-        value: item.value || '',
-      })),
+      children: raw.filters.map((item: any) => {
+        const field = mapField(item.field);
+        return {
+          id: item.id || generateConditionId('leaf'),
+          type: 'LEAF',
+          field,
+          operator: mapOperator(field, item.operator),
+          value: item.value ?? '',
+        };
+      }),
     };
   }
 
@@ -210,8 +252,9 @@ export function getConditionDepth(node: any, currentDepth = 1): number {
  * 校验计算源 / 数据源条件组约束：
  * 1. 规则数限制（计算源 <= 5, 数据源指定表 <= 10）
  * 2. 关系层级深度限制 (<= 2层)
- * 3. 板块/项目对象数量限制 (<= 100个)
- * 4. 字段值必填校验
+ * 3. 输入字符长度限制 (<= 256字符)
+ * 4. 属于对象数量限制 (<= 500个)
+ * 5. 字段与值必填校验
  */
 export function validateRecognitionCondition(
   group: ConditionGroup,
@@ -284,6 +327,14 @@ export function validateRecognitionCondition(
         }
       }
 
+      // 文本匹配（前缀/后缀/包含）<= 256 字符校验
+      if (['PREFIX', 'SUFFIX', 'CONTAINS', 'NOT_CONTAINS'].includes(operator)) {
+        if (typeof val === 'string' && val.length > 256) {
+          leafErrorMsg = '前缀匹配、后缀匹配、包含条件输入内容不能超过256个字符';
+          return;
+        }
+      }
+
       // 板块/项目对象数量 <= 100 校验
       if (
         sourceType === 'COMPUTE_ENGINE' &&
@@ -303,8 +354,8 @@ export function validateRecognitionCondition(
         }
       }
 
-      // 数据源 db/schema <= 500 校验
-      if (sourceType === 'DATASOURCE' && ['DB_NAME', 'SCHEMA_NAME'].includes(field) && operator === 'IN') {
+      // 数据源属于操作符 <= 500 资产对象校验
+      if (sourceType === 'DATASOURCE' && operator === 'IN') {
         let dsCount = 0;
         if (Array.isArray(val)) {
           dsCount = val.length;
@@ -312,7 +363,21 @@ export function validateRecognitionCondition(
           dsCount = val.split(/[,，\n\s]+/).filter(Boolean).length;
         }
         if (dsCount > 500) {
-          leafErrorMsg = '数据库/Schema 选择/填写的对象数量不能超过500个';
+          leafErrorMsg = '属于条件选择/填写的资产对象数量不能超过500个';
+          return;
+        }
+      }
+
+      // 资产清单标签校验
+      if (sourceType === 'DATASOURCE' && field === 'TAG' && ['TAG_ANY', 'TAG_ALL'].includes(operator)) {
+        let tagCount = 0;
+        if (Array.isArray(val)) {
+          tagCount = val.length;
+        } else if (typeof val === 'string' && val.trim()) {
+          tagCount = val.split(/[,，\n\s]+/).filter(Boolean).length;
+        }
+        if (tagCount === 0) {
+          leafErrorMsg = '请至少选择或填写一个资产清单标签';
           return;
         }
       }
@@ -355,8 +420,9 @@ export function useRecognitionCondition() {
     );
   };
 
-  const getDatasourceOperators = async (): Promise<OperatorOption[]> => {
-    return datasourceAllOperatorOptions;
+  const getDatasourceOperators = async (field?: unknown): Promise<OperatorOption[]> => {
+    const key = String(field || 'TABLE_NAME');
+    return datasourceOperatorsByField[key] || datasourceOperatorsByField.TABLE_NAME;
   };
 
   return {
@@ -364,6 +430,7 @@ export function useRecognitionCondition() {
     computeAllOperatorOptions,
     datasourceFieldOptions,
     datasourceAllOperatorOptions,
+    datasourceOperatorsByField,
     loadComputeFields,
     getComputeOperators,
     loadDatasourceFields,
@@ -377,3 +444,4 @@ export function useRecognitionCondition() {
     validateRecognitionCondition,
   };
 }
+

@@ -11,54 +11,56 @@
     @cancel="handleCancel"
   >
     <div class="modal-body-container">
-      <a-form ref="formRef" :model="formData" :rules="rules" layout="vertical">
-        <!-- 1. 特征名称 -->
-        <a-form-item label="特征名称" name="ruleName" required>
-          <span v-if="mode === 'view'" class="readonly-text font-medium">{{ formData.ruleName }}</span>
-          <a-input
-            v-else
-            v-model:value="formData.ruleName"
-            placeholder="请填写识别特征的名称，名称唯一，最多输入128字符"
-            :maxlength="128"
-            show-count
-          />
-        </a-form-item>
+      <a-spin :spinning="detailLoading">
+        <a-form ref="formRef" :model="formData" :rules="rules" layout="vertical">
+          <!-- 1. 特征名称 -->
+          <a-form-item label="特征名称" name="ruleName" required>
+            <span v-if="mode === 'view'" class="readonly-text font-medium">{{ formData.ruleName }}</span>
+            <a-input
+              v-else
+              v-model:value="formData.ruleName"
+              placeholder="请填写识别特征的名称，名称唯一，最多输入128字符"
+              :maxlength="128"
+              show-count
+            />
+          </a-form-item>
 
-        <!-- 2. 特征条件 -->
-        <a-form-item label="特征条件" required class="condition-form-item">
-          <div class="condition-tip-alert mb-2">
-            <span class="tip-dot">●</span>
-            至少配置一条规则。如需添加规则，请单击
-            <strong>+添加规则</strong> 按钮。最多配置50条规则，且最多配置5层关系。过滤条件之间的关系可配置为“且”、“或”。
-          </div>
+          <!-- 2. 特征条件 -->
+          <a-form-item label="特征条件" required class="condition-form-item">
+            <div class="condition-tip-alert mb-2">
+              <span class="tip-dot">●</span>
+              至少配置一条规则。如需添加规则，请单击
+              <strong>+添加规则</strong> 按钮。最多配置50条规则，且最多配置5层关系。过滤条件之间的关系可配置为“且”、“或”。
+            </div>
 
-          <FeatureConditionBuilder
-            ref="conditionBuilderRef"
-            v-model="formData.conditionGroup"
-            :disabled="mode === 'view'"
-            :max-depth="5"
-          />
-        </a-form-item>
+            <FeatureConditionBuilder
+              ref="conditionBuilderRef"
+              v-model="formData.conditionGroup"
+              :disabled="mode === 'view'"
+              :max-depth="5"
+            />
+          </a-form-item>
 
-        <!-- 3. 描述 -->
-        <a-form-item label="描述" name="description">
-          <span v-if="mode === 'view'" class="readonly-text">{{ formData.description || '-' }}</span>
-          <a-textarea
-            v-else
-            v-model:value="formData.description"
-            placeholder="请填写识别特征相关使用场景的描述。不超过1000个字符。"
-            :rows="3"
-            :maxlength="1000"
-            show-count
-          />
-        </a-form-item>
-      </a-form>
+          <!-- 3. 描述 -->
+          <a-form-item label="描述" name="description">
+            <span v-if="mode === 'view'" class="readonly-text">{{ formData.description || '-' }}</span>
+            <a-textarea
+              v-else
+              v-model:value="formData.description"
+              placeholder="请填写识别特征相关使用场景的描述。不超过1000个字符。"
+              :rows="3"
+              :maxlength="1000"
+              show-count
+            />
+          </a-form-item>
+        </a-form>
+      </a-spin>
     </div>
 
     <template #footer>
       <a-space>
         <a-button @click="handleCancel">{{ mode === 'view' ? '关闭' : '取消' }}</a-button>
-        <a-button v-if="mode !== 'view'" type="primary" :loading="submitting" @click="handleSubmit"> 确定 </a-button>
+        <a-button v-if="mode !== 'view'" type="primary" :loading="submitting || detailLoading" @click="handleSubmit"> 确定 </a-button>
       </a-space>
     </template>
   </a-modal>
@@ -83,6 +85,7 @@ const { createInitialCondition, normalizeConditionGroup, countConditionRules } =
 const api = getDataSecurityCenterAPIAPIApi();
 const visible = ref(false);
 const submitting = ref(false);
+const detailLoading = ref(false);
 const mode = ref<'create' | 'edit' | 'clone' | 'view'>('create');
 const currentId = ref<number | null>(null);
 const formRef = ref();
@@ -119,7 +122,7 @@ const modalTitle = computed(() => {
   }
 });
 
-function open(modalMode: 'create' | 'edit' | 'clone' | 'view', row?: SensitiveRuleVO | any) {
+async function open(modalMode: 'create' | 'edit' | 'clone' | 'view', row?: SensitiveRuleVO | any) {
   mode.value = modalMode;
   visible.value = true;
   submitting.value = false;
@@ -138,10 +141,30 @@ function open(modalMode: 'create' | 'edit' | 'clone' | 'view', row?: SensitiveRu
     formData.priority = row.priority || 10;
     formData.ruleType = modalMode === 'clone' ? 'CUSTOM' : row.ruleType || 'CUSTOM';
 
-    // 解析并规范化 featureConfig
-    if (row.featureConfig) {
+    let featureConfig = row.featureConfig;
+    if (!featureConfig && row.id) {
+      detailLoading.value = true;
       try {
-        const config = typeof row.featureConfig === 'string' ? JSON.parse(row.featureConfig) : row.featureConfig;
+        const res = await api.getSensitiveRuleDetail(row.id);
+        const detail = (res as any)?.data || res;
+        if (detail) {
+          featureConfig = detail.featureConfig;
+          if (detail.ruleName && modalMode !== 'clone') formData.ruleName = detail.ruleName;
+          if (detail.description !== undefined) formData.description = detail.description || '';
+          if (detail.priority !== undefined) formData.priority = detail.priority;
+          if (detail.ruleType && modalMode !== 'clone') formData.ruleType = detail.ruleType;
+        }
+      } catch (err) {
+        console.error('加载识别特征详情失败:', err);
+      } finally {
+        detailLoading.value = false;
+      }
+    }
+
+    // 解析并规范化 featureConfig
+    if (featureConfig) {
+      try {
+        const config = typeof featureConfig === 'string' ? JSON.parse(featureConfig) : featureConfig;
         formData.conditionGroup = normalizeConditionGroup(config);
       } catch {
         formData.conditionGroup = createInitialCondition();

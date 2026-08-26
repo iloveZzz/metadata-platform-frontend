@@ -16,4 +16,5 @@ export interface CategoryTreeNodeVO {
   nodeName?: string;
   parentId?: number;
   visibility?: CategoryTreeNodeVOVisibility;
+  categoryCount?: number;
 }

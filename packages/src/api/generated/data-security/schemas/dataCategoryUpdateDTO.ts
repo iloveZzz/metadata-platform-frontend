@@ -8,7 +8,7 @@
 import type { DataCategoryUpdateDTOScanDimensionConfig } from './dataCategoryUpdateDTOScanDimensionConfig';
 
 export interface DataCategoryUpdateDTO {
-  categoryCode: string;
+  categoryCode?: string;
   categoryName: string;
   description?: string;
   /**
@@ -16,6 +16,7 @@ export interface DataCategoryUpdateDTO {
    * @maximum 5
    */
   priority?: number;
+  recognitionFeatures?: string[];
   scanDimensionConfig?: DataCategoryUpdateDTOScanDimensionConfig;
   securityGradeId: number;
   treeNodeId: number;

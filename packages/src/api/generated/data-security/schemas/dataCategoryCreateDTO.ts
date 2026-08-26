@@ -8,7 +8,7 @@
 import type { DataCategoryCreateDTOScanDimensionConfig } from './dataCategoryCreateDTOScanDimensionConfig';
 
 export interface DataCategoryCreateDTO {
-  categoryCode: string;
+  categoryCode?: string;
   categoryName: string;
   description?: string;
   /**
@@ -16,6 +16,7 @@ export interface DataCategoryCreateDTO {
    * @maximum 5
    */
   priority?: number;
+  recognitionFeatures?: string[];
   scanDimensionConfig?: DataCategoryCreateDTOScanDimensionConfig;
   securityGradeId: number;
   treeNodeId: number;

@@ -59,10 +59,9 @@ export function useRecognitionRuleTable() {
 
       tableData.value = items;
       pagination.total = total;
-    } catch (err: any) {
+    } catch {
       tableData.value = [];
       pagination.total = 0;
-      message.error(err.response?.data?.message || err.message || '加载识别规则失败');
     } finally {
       loading.value = false;
     }
@@ -86,8 +85,8 @@ export function useRecognitionRuleTable() {
       await recognitionRuleApi.updateStatus(row.id, newStatus);
       message.success(`规则 [${row.ruleName}] 已${newStatus === 'ENABLED' ? '启用' : '停用'}`);
       fetchList();
-    } catch (err: any) {
-      message.error(err.response?.data?.message || err.message || '状态切换失败');
+    } catch {
+      // 全局拦截器统一提示错误
     }
   };
 
@@ -97,8 +96,8 @@ export function useRecognitionRuleTable() {
       await recognitionRuleApi.reset(row.id);
       message.success(`规则 [${row.ruleName}] 已重置，打标将被清空并重新识别`);
       fetchList();
-    } catch (err: any) {
-      message.error(err.response?.data?.message || err.message || '重置失败');
+    } catch {
+      // 全局拦截器统一提示错误
     }
   };
 
@@ -108,8 +107,8 @@ export function useRecognitionRuleTable() {
       await recognitionRuleApi.clone(row.id);
       message.success(`规则 [${row.ruleName}] 克隆成功`);
       fetchList();
-    } catch (err: any) {
-      message.error(err.response?.data?.message || err.message || '克隆失败');
+    } catch {
+      // 全局拦截器统一提示错误
     }
   };
 
@@ -119,8 +118,8 @@ export function useRecognitionRuleTable() {
       await recognitionRuleApi.delete(row.id);
       message.success(`规则 [${row.ruleName}] 已删除，次日生效`);
       fetchList();
-    } catch (err: any) {
-      message.error(err.response?.data?.message || err.message || '删除失败');
+    } catch {
+      // 全局拦截器统一提示错误
     }
   };
 

@@ -9,7 +9,7 @@
 export type PageDataCategoriesParams = {
   pageIndex?: number;
   pageSize?: number;
-  treeNodeId?: number;
+  treeNodeId?: number | string;
   keyword?: string;
   status?: string;
 };

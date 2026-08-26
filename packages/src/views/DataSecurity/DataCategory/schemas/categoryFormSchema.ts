@@ -2,7 +2,7 @@ import type { ISchema } from '@yss-ui/components';
 
 export function createCategoryFormSchema(
   grades: Array<{ label: string; value: number }>,
-  features: Array<{ label: string; value: string; desc?: string }> = []
+  _features: Array<{ label: string; value: string; desc?: string }> = []
 ): ISchema {
   return {
     type: 'object',
@@ -38,7 +38,7 @@ export function createCategoryFormSchema(
                 required: true,
                 'x-decorator': 'FormItem',
                 'x-decorator-props': {
-                  gridSpan: 2,
+                  gridSpan: 1,
                 },
                 'x-component': 'Input',
                 'x-component-props': {
@@ -53,7 +53,7 @@ export function createCategoryFormSchema(
                 title: '分类缩写',
                 'x-decorator': 'FormItem',
                 'x-decorator-props': {
-                  gridSpan: 2,
+                  gridSpan: 1,
                 },
                 'x-component': 'Input',
                 'x-component-props': {
@@ -146,13 +146,9 @@ export function createCategoryFormSchema(
                 'x-decorator-props': {
                   extra: '最多可以选择20个识别特征，多个特征之间为“或”的关系',
                 },
-                'x-component': 'Select',
+                'x-component': 'Slot',
                 'x-component-props': {
-                  mode: 'multiple',
-                  maxTagCount: 4,
-                  placeholder: '请选择识别特征',
-                  options: features,
-                  allowClear: true,
+                  name: 'recognitionFeatures',
                 },
               },
               priority: {
@@ -176,6 +172,18 @@ export function createCategoryFormSchema(
                   ],
                 },
                 'x-validator': [{ required: true, message: '请选择优先级' }],
+              },
+              categoryRules: {
+                type: 'void',
+                title: '数据分类规则',
+                'x-decorator': 'FormItem',
+                'x-decorator-props': {
+                  extra: '至少配置一条规则。如需添加规则，请单击+添加规则按钮。最多配置5条规则，且最多配置2层关系。过滤条件之间的关系可配置为且、或。',
+                },
+                'x-component': 'Slot',
+                'x-component-props': {
+                  name: 'categoryRules',
+                },
               },
             },
           },

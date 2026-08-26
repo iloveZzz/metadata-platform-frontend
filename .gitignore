@@ -32,6 +32,7 @@ dist-ssr
 .env.development.local
 .env.test.local
 .env.production.local
+.npmrc
 
 # Generated files
 # 允许 API 生成文件被提交
@@ -91,3 +92,4 @@ packages/dist/
 packages/dist-jsp*
 packages/node_modules/
 packages/.DS_Store
+test-results/

@@ -10,7 +10,7 @@ export function useDataCategoryTable() {
   const currentParams = ref({
     pageIndex: 1,
     pageSize: 10,
-    treeNodeId: undefined as number | undefined,
+    treeNodeId: undefined as number | string | undefined,
     keyword: undefined as string | undefined,
     status: undefined as string | undefined,
   });
@@ -58,7 +58,7 @@ export function useDataCategoryTable() {
         params.treeNodeId !== null &&
         params.treeNodeId !== 0 &&
         params.treeNodeId !== '0'
-          ? Number(params.treeNodeId)
+          ? (params.treeNodeId as any)
           : undefined;
     }
     currentParams.value = { ...currentParams.value, ...formattedParams };

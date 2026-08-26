@@ -1,0 +1,5 @@
+{
+  "packages/src/**/*.{vue,js,ts,jsx,tsx}": [
+    "prettier --write"
+  ]
+}

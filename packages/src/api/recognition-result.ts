@@ -222,7 +222,7 @@ export function batchDeleteRecognitionResults(ids: number[]) {
   return customInstance({
     url: '/api/v1/sec/recognition-results/batch',
     method: 'delete',
-    params: { ids: ids.join(',') },
+    data: { ids },
   });
 }
 

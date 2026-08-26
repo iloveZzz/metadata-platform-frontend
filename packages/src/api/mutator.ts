@@ -56,7 +56,7 @@ axiosInstance.defaults.transformResponse = [
       // 仅处理字符串类型的 JSON 响应
       if (typeof data === 'string') {
         // 检查响应头，确保是 JSON 类型
-        const contentType = headers?.['content-type'] || headers?.['Content-Type'] || ''
+        const contentType = String(headers?.['content-type'] || headers?.['Content-Type'] || '')
         if (contentType.includes('application/json') || contentType.includes('text/json')) {
           return JSONbigString.parse(data)
         }

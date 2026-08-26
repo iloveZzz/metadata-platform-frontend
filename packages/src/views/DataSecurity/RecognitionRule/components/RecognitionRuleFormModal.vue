@@ -2,7 +2,7 @@
   <a-modal
     v-model:open="visible"
     :title="modalTitle"
-    width="900px"
+    width="920px"
     :confirm-loading="submitting"
     :destroy-on-close="true"
     :mask-closable="false"
@@ -10,138 +10,260 @@
     class="recognition-rule-form-modal"
   >
     <div class="modal-form-content">
-      <a-form ref="formRef" :model="formData" :rules="formRules" layout="vertical">
-        <!-- 1. 基础配置 -->
-        <div class="form-section-title">基础配置</div>
-        <a-row :gutter="20">
-          <a-col :span="12">
-            <a-form-item label="识别规则名称" name="ruleName" required>
-              <a-input
-                v-model:value="formData.ruleName"
-                placeholder="包含中文、字母、数字、下划线，不超过12个字符"
-                :maxlength="12"
-                show-count
-              />
-            </a-form-item>
-          </a-col>
-          <a-col :span="12">
-            <a-form-item label="优先级 (1-100)" name="priority">
-              <a-input-number
-                v-model:value="formData.priority"
-                :min="1"
-                :max="100"
-                style="width: 100%"
-                placeholder="10"
-              />
-            </a-form-item>
-          </a-col>
-        </a-row>
-
-        <a-form-item label="识别规则说明" name="description" class="mb-4">
-          <a-textarea
-            v-model:value="formData.description"
-            placeholder="自定义识别规则备注信息。不超过128个字符。"
-            :rows="3"
-            :maxlength="128"
-            show-count
-          />
-        </a-form-item>
-
-        <!-- 2. 扫描范围 -->
-        <div class="form-section-title">扫描范围</div>
-        <a-form-item label="数据来源类型" required class="mb-3">
-          <a-radio-group v-model:value="formData.scanSourceType">
-            <a-radio value="COMPUTE_ENGINE">计算源</a-radio>
-            <a-radio value="DATASOURCE">数据源</a-radio>
-          </a-radio-group>
-        </a-form-item>
-
-        <!-- 计算源配置 (使用 YConditionBuilder) -->
-        <div v-if="formData.scanSourceType === 'COMPUTE_ENGINE'" class="scope-box mb-4">
-          <div class="condition-alert-header mb-3">
-            <div class="header-left">
-              <span class="header-title">规则关系配置</span>
-              <a-tag
-                :color="computeRuleCount > 5 ? 'error' : computeRuleCount === 5 ? 'warning' : 'blue'"
-                class="rule-count-badge"
-              >
-                {{ computeRuleCount }} / 5 条规则
-              </a-tag>
-            </div>
-            <div class="header-right">
-              <InfoCircleOutlined class="tip-icon" />
-              <span class="tip-text">规则最多5条，关系最多2层，板块/项目&lt;=100个</span>
-            </div>
-          </div>
-          <YConditionBuilder
-            ref="computeConditionRef"
-            v-model="computeConditionGroup"
-            :max-depth="2"
-            :operator-options="computeAllOperatorOptions"
-            :get-operators="getComputeOperators"
-            :load-fields="loadComputeFields"
-            :strict-mode="false"
-          />
-        </div>
-
-        <!-- 数据源配置 -->
-        <div v-if="formData.scanSourceType === 'DATASOURCE'" class="scope-box mb-4">
-          <a-form-item label="选择数据源" required class="mb-3">
-            <a-select
-              v-model:value="formData.datasourceScopeConfig.datasourceIds"
-              mode="tags"
-              placeholder="请选择或输入扫描数据源 ID"
+      <a-spin :spinning="modalLoading" tip="正在加载规则配置...">
+        <!-- 基础与核心配置 Formily 表单（包含分类和扫描动态插槽） -->
+        <YFormily
+          v-model="formData"
+          :form="formInstance"
+          :schema="formSchema"
+          class="recognition-rule-formily"
+        >
+          <!-- 设置数据分类 Radio.Group 自定义插槽 -->
+          <template #categoryScopeMode="{ onChange }">
+            <a-radio-group
+              v-model:value="formData.categoryScopeMode"
+              @change="
+                (e: any) => {
+                  const val = e?.target?.value || e;
+                  formData.categoryScopeMode = val;
+                  onChange?.(val);
+                }
+              "
             >
-              <a-select-option v-for="ds in datasourceList" :key="ds.value" :value="ds.value">
-                {{ ds.label }} ({{ ds.value }})
-              </a-select-option>
-            </a-select>
-          </a-form-item>
-
-          <a-form-item label="数据范围" required class="mb-3">
-            <a-radio-group v-model:value="formData.datasourceScopeConfig.tableScopeType">
-              <a-radio value="ALL_TABLES">全部表</a-radio>
-              <a-radio value="SPECIFIC_TABLES">指定表</a-radio>
+              <a-radio value="ALL">全部分类</a-radio>
+              <a-radio value="TREE_NODE">指定目录下所有分类</a-radio>
+              <a-radio value="SPECIFIC">指定数据分类</a-radio>
             </a-radio-group>
-          </a-form-item>
+          </template>
 
-          <!-- 指定表过滤条件 (使用 YConditionBuilder) -->
-          <div
-            v-if="formData.datasourceScopeConfig.tableScopeType === 'SPECIFIC_TABLES'"
-            class="mt-3 pt-3 border-t border-gray-100"
-          >
-            <div class="condition-alert-header mb-3">
-              <div class="header-left">
-                <span class="header-title">指定表过滤规则配置</span>
-                <a-tag
-                  :color="dsRuleCount > 10 ? 'error' : dsRuleCount === 10 ? 'warning' : 'blue'"
-                  class="rule-count-badge"
-                >
-                  {{ dsRuleCount }} / 10 个过滤条件
-                </a-tag>
+          <!-- 数据分类分级动态插槽（直接紧随设置数据分类单选框下方展开） -->
+          <template #categoryDynamicSlot>
+            <div class="category-dynamic-wrapper mt-1">
+              <!-- 模式说明提示 -->
+              <div class="category-mode-tip mb-3 text-xs text-gray-500">
+                <span v-if="formData.categoryScopeMode === 'ALL'">
+                  全部分类：指当前租户下所有生效的数据分类。
+                </span>
+                <span v-else-if="formData.categoryScopeMode === 'TREE_NODE'">
+                  指定目录下所有分类：指定目录及其子目录下所有生效的数据分类。
+                </span>
+                <span v-else-if="formData.categoryScopeMode === 'SPECIFIC'">
+                  指定数据分类：根据上级目录筛选当前目录及其子目录下所有生效的数据分类，如需增加数据分类，可单击新增一组分类添加多个目录。
+                </span>
               </div>
-              <div class="header-right">
-                <InfoCircleOutlined class="tip-icon" />
-                <span class="tip-text">最多10个过滤条件，属于对象&lt;=500个</span>
+
+              <!-- 1. 指定目录下所有分类 (TREE_NODE) 配置面板 -->
+              <div v-if="formData.categoryScopeMode === 'TREE_NODE'" class="scope-box mb-4">
+                <div class="condition-alert-header mb-3">
+                  <div class="header-left">
+                    <span class="header-title">选择分类目录</span>
+                    <a-tag color="blue" class="rule-count-badge">
+                      覆盖 {{ treeNodeCoveredCategoryCount }} 个生效数据分类
+                    </a-tag>
+                  </div>
+                  <div class="header-right">
+                    <InfoCircleOutlined class="tip-icon" />
+                    <span class="tip-text">将自动包含所选目录及其所有子目录下生效的数据分类</span>
+                  </div>
+                </div>
+
+                <div class="field-item">
+                  <div class="field-label mb-1 text-xs text-gray-600">分类目录 <span class="text-red-500">*</span></div>
+                  <a-tree-select
+                    v-model:value="selectedTreeNodeIds"
+                    :tree-data="categoryTreeData"
+                    :field-names="{ label: 'nodeName', value: 'id', children: 'children' }"
+                    placeholder="请选择分类目录（支持多选）"
+                    tree-default-expand-all
+                    multiple
+                    allow-clear
+                    show-search
+                    tree-node-filter-prop="nodeName"
+                    :dropdown-match-select-width="true"
+                    :dropdown-style="{ maxHeight: '360px', overflowX: 'hidden' }"
+                    style="width: 100%"
+                  />
+                </div>
+              </div>
+
+              <!-- 2. 指定数据分类 (SPECIFIC) 配置面板 -->
+              <div v-if="formData.categoryScopeMode === 'SPECIFIC'" class="scope-box mb-4">
+                <div class="condition-alert-header mb-3">
+                  <div class="header-left">
+                    <span class="header-title">数据分类分组配置</span>
+                    <a-tag color="blue" class="rule-count-badge">
+                      已配置 {{ specificGroups.length }} 组分类
+                    </a-tag>
+                  </div>
+                  <div class="header-right">
+                    <InfoCircleOutlined class="tip-icon" />
+                    <span class="tip-text">可按上级目录逐组筛选并多选分类，支持添加多组</span>
+                  </div>
+                </div>
+
+                <div class="specific-groups-list">
+                  <div
+                    v-for="(group, index) in specificGroups"
+                    :key="group.id"
+                    class="specific-group-card mb-3"
+                  >
+                    <div class="group-card-header">
+                      <span class="group-badge">第 {{ index + 1 }} 组分类</span>
+                      <a-button
+                        v-if="specificGroups.length > 1"
+                        type="text"
+                        danger
+                        size="small"
+                        class="group-delete-btn"
+                        @click="handleRemoveSpecificGroup(index)"
+                      >
+                        <template #icon><DeleteOutlined /></template>
+                        删除该组
+                      </a-button>
+                    </div>
+
+                    <a-row :gutter="12" class="group-card-body">
+                      <a-col :span="10">
+                        <div class="field-label mb-1 text-xs text-gray-600">上级目录 <span class="text-red-500">*</span></div>
+                        <a-tree-select
+                          v-model:value="group.treeNodeId"
+                          :tree-data="categoryTreeData"
+                          :field-names="{ label: 'nodeName', value: 'id', children: 'children' }"
+                          placeholder="请选择上级目录"
+                          tree-default-expand-all
+                          allow-clear
+                          show-search
+                          tree-node-filter-prop="nodeName"
+                          :dropdown-match-select-width="true"
+                          :dropdown-style="{ maxHeight: '360px', overflowX: 'hidden' }"
+                          style="width: 100%"
+                          @change="handleGroupTreeNodeChange(group)"
+                        />
+                      </a-col>
+                      <a-col :span="14">
+                        <div class="field-label mb-1 text-xs text-gray-600 flex justify-between items-center">
+                          <span>数据分类 <span class="text-red-500">*</span></span>
+                          <a
+                            v-if="getCategoryOptionsForGroup(group).length > 0"
+                            class="text-xs text-blue-500 cursor-pointer"
+                            @click="handleSelectAllInGroup(group)"
+                          >
+                            全选本目录 ({{ getCategoryOptionsForGroup(group).length }})
+                          </a>
+                        </div>
+                        <a-select
+                          v-model:value="group.categoryIds"
+                          mode="multiple"
+                          placeholder="请选择数据分类"
+                          style="width: 100%"
+                          allow-clear
+                          show-search
+                          :filter-option="filterCategoryOption"
+                          :options="getCategoryOptionsForGroup(group)"
+                          :disabled="!group.treeNodeId"
+                          :dropdown-match-select-width="true"
+                          :dropdown-style="{ maxHeight: '360px', overflowX: 'hidden' }"
+                        />
+                      </a-col>
+                    </a-row>
+                  </div>
+                </div>
+
+                <a-button
+                  type="dashed"
+                  block
+                  class="add-group-btn"
+                  @click="handleAddSpecificGroup"
+                >
+                  <PlusOutlined /> 新增一组分类
+                </a-button>
               </div>
             </div>
-            <YConditionBuilder
-              ref="dsConditionRef"
-              v-model="dsFilterConditionGroup"
-              :max-depth="2"
-              :operator-options="datasourceAllOperatorOptions"
-              :get-operators="getDatasourceOperators"
-              :load-fields="loadDatasourceFields"
-              :strict-mode="false"
-            />
-          </div>
-        </div>
-      </a-form>
+          </template>
+
+          <!-- 数据来源类型 Radio.Group 自定义插槽 -->
+          <template #scanSourceType="{ onChange }">
+            <a-radio-group
+              v-model:value="formData.scanSourceType"
+              @change="
+                (e: any) => {
+                  const val = e?.target?.value || e;
+                  formData.scanSourceType = val;
+                  onChange?.(val);
+                }
+              "
+            >
+              <a-radio value="DATASOURCE">数据源</a-radio>
+            </a-radio-group>
+          </template>
+
+          <!-- 扫描范围动态插槽（直接紧随数据来源类型单选框下方展开） -->
+          <template #scanDynamicSlot>
+            <div class="scan-dynamic-wrapper mt-1">
+              <!-- 数据源配置 -->
+              <div class="scope-box mb-4">
+                <div class="mb-3">
+                  <div class="field-label mb-1 text-xs text-gray-600">选择数据源 <span class="text-red-500">*</span></div>
+                  <a-select
+                    v-model:value="datasourceScopeConfig.datasourceIds"
+                    mode="multiple"
+                    placeholder="请选择扫描数据源"
+                    style="width: 100%"
+                    :options="datasourceList"
+                    allow-clear
+                    show-search
+                    :filter-option="filterDatasourceOption"
+                  />
+                </div>
+
+                <div class="mb-3">
+                  <div class="field-label mb-1 text-xs text-gray-600">数据范围 <span class="text-red-500">*</span></div>
+                  <a-radio-group v-model:value="datasourceScopeConfig.tableScopeType">
+                    <a-radio value="ALL_TABLES">全部表</a-radio>
+                    <a-radio value="SPECIFIC_TABLES">指定表</a-radio>
+                  </a-radio-group>
+                </div>
+
+                <!-- 指定表过滤条件 (使用 YConditionBuilder) -->
+                <div
+                  v-if="datasourceScopeConfig.tableScopeType === 'SPECIFIC_TABLES'"
+                  class="mt-3 pt-3 border-t border-gray-100"
+                >
+                  <div class="condition-alert-header mb-3">
+                    <div class="header-left">
+                      <span class="header-title">指定表过滤规则配置</span>
+                      <a-tag
+                        :color="dsRuleCount > 10 ? 'error' : dsRuleCount === 10 ? 'warning' : 'blue'"
+                        class="rule-count-badge"
+                      >
+                        {{ dsRuleCount }} / 10 个过滤条件
+                      </a-tag>
+                    </div>
+                    <div class="header-right">
+                      <InfoCircleOutlined class="tip-icon" />
+                      <span class="tip-text">最多10个过滤条件，关系支持且/或最多2层，属于对象&lt;=500个，文本&lt;=256字</span>
+                    </div>
+                  </div>
+                  <YConditionBuilder
+                    ref="dsConditionRef"
+                    v-model="dsFilterConditionGroup"
+                    :max-depth="2"
+                    :operator-options="datasourceAllOperatorOptions"
+                    :get-operators="getDatasourceOperators"
+                    :load-fields="loadDatasourceFields"
+                    :strict-mode="false"
+                  />
+                </div>
+              </div>
+            </div>
+          </template>
+        </YFormily>
+      </a-spin>
     </div>
 
     <template #footer>
       <a-button @click="visible = false">取消</a-button>
-      <a-button type="primary" :loading="submitting" @click="handleSubmit">确定</a-button>
+      <a-button type="primary" :loading="submitting || modalLoading" @click="handleSubmit">确定</a-button>
     </template>
   </a-modal>
 </template>
@@ -149,13 +271,20 @@
 <script setup lang="ts">
 import { ref, reactive, computed } from 'vue';
 import { message } from 'ant-design-vue';
-import { InfoCircleOutlined } from '@ant-design/icons-vue';
-import { YConditionBuilder, type ConditionGroup } from '@yss-ui/components';
+import { InfoCircleOutlined, PlusOutlined, DeleteOutlined } from '@ant-design/icons-vue';
+import { createForm } from '@formily/core';
+import { YFormily, YConditionBuilder, type ConditionGroup } from '@yss-ui/components';
 import { GetConnectors } from '@/api';
+import { recognitionRuleApi } from '@/api/recognitionRuleApi';
+import { getDataSecurityCenterAPIAPIApi } from '@/api/generated/data-security';
+import type { CategoryTreeNodeVO, DataCategoryVO } from '@/api/generated/data-security/schemas';
 import type { RecognitionRuleItem } from '../hooks/useRecognitionRuleTable';
 import { useRecognitionCondition } from '../hooks/useRecognitionCondition';
+import { createRecognitionRuleFormSchema } from '../schemas/recognitionRuleFormSchema';
 
 defineOptions({ name: 'RecognitionRuleFormModal' });
+
+const api = getDataSecurityCenterAPIAPIApi();
 
 const emit = defineEmits<{
   (e: 'success', payload: any): void;
@@ -163,46 +292,139 @@ const emit = defineEmits<{
 
 const visible = ref(false);
 const submitting = ref(false);
+const modalLoading = ref(false);
 const mode = ref<'create' | 'edit' | 'clone'>('create');
 const currentId = ref<number | null>(null);
-const formRef = ref();
+
+const formInstance = createForm({
+  validateFirst: false,
+});
+
+const formSchema = computed(() => createRecognitionRuleFormSchema());
 
 const {
-  computeAllOperatorOptions,
   datasourceAllOperatorOptions,
-  loadComputeFields,
-  getComputeOperators,
   loadDatasourceFields,
   getDatasourceOperators,
-  createInitialComputeCondition,
   createInitialDatasourceFilterCondition,
-  normalizeComputeCondition,
   normalizeDatasourceFilterCondition,
   countConditionRules,
   validateRecognitionCondition,
 } = useRecognitionCondition();
 
-const computeConditionRef = ref<any>(null);
 const dsConditionRef = ref<any>(null);
-const computeConditionGroup = ref<ConditionGroup>(createInitialComputeCondition());
 const dsFilterConditionGroup = ref<ConditionGroup>(createInitialDatasourceFilterCondition());
 
-const computeRuleCount = computed(() => countConditionRules(computeConditionGroup.value));
 const dsRuleCount = computed(() => countConditionRules(dsFilterConditionGroup.value));
 
 const datasourceList = ref<Array<{ label: string; value: string }>>([]);
+const categoryTreeData = ref<CategoryTreeNodeVO[]>([]);
+const allActiveCategories = ref<DataCategoryVO[]>([]);
 
-const loadMetadata = async () => {
-  try {
-    const connRes = await GetConnectors().catch(() => ({ data: [] }));
-    datasourceList.value = ((connRes as any)?.data || []).map((conn: any) => ({
-      label: conn.name || conn.id,
-      value: conn.id,
-    }));
-  } catch (err) {
-    console.error('加载识别规则数据源元数据失败', err);
+// 数据分类圈选状态
+const selectedTreeNodeIds = ref<Array<number | string>>([]);
+
+interface SpecificGroupItem {
+  id: string;
+  treeNodeId?: number | string | null;
+  categoryIds: number[];
+}
+
+const specificGroups = ref<SpecificGroupItem[]>([
+  { id: '1', treeNodeId: null, categoryIds: [] },
+]);
+
+function formatCategoryTreeNodes(nodes: any[]): CategoryTreeNodeVO[] {
+  if (!Array.isArray(nodes)) return [];
+  return nodes.map(n => ({
+    ...n,
+    id: String(n.id) as any,
+    value: String(n.id),
+    nodeName: n.nodeName,
+    children: formatCategoryTreeNodes(n.children || []),
+  }));
+}
+
+// 递归查找指定节点及其所有子节点的 ID（统一为字符串比较）
+function collectSubNodeIds(nodeId: number | string, treeNodes: CategoryTreeNodeVO[]): Set<string> {
+  const result = new Set<string>();
+  function traverse(nodes: CategoryTreeNodeVO[], targetFound: boolean) {
+    for (const node of nodes) {
+      const isTarget = targetFound || String(node.id) === String(nodeId);
+      if (isTarget) {
+        if (node.id != null) {
+          result.add(String(node.id));
+        }
+        if (node.children && node.children.length > 0) {
+          traverse(node.children, true);
+        }
+      } else if (node.children && node.children.length > 0) {
+        traverse(node.children, false);
+      }
+    }
   }
-};
+  traverse(treeNodes, false);
+  return result;
+}
+
+// 计算指定目录下所有分类模式所覆盖的分类数量
+const treeNodeCoveredCategoryCount = computed(() => {
+  if (selectedTreeNodeIds.value.length === 0) return 0;
+  const allTargetNodeIds = new Set<string>();
+  selectedTreeNodeIds.value.forEach(id => {
+    const subIds = collectSubNodeIds(id, categoryTreeData.value);
+    subIds.forEach(subId => allTargetNodeIds.add(String(subId)));
+  });
+  return allActiveCategories.value.filter(c => c.treeNodeId != null && allTargetNodeIds.has(String(c.treeNodeId))).length;
+});
+
+function handleAddSpecificGroup() {
+  specificGroups.value.push({
+    id: String(Date.now() + Math.random()),
+    treeNodeId: null,
+    categoryIds: [],
+  });
+}
+
+function handleRemoveSpecificGroup(index: number) {
+  if (specificGroups.value.length > 1) {
+    specificGroups.value.splice(index, 1);
+  }
+}
+
+function handleGroupTreeNodeChange(group: SpecificGroupItem) {
+  if (!group.treeNodeId) {
+    group.categoryIds = [];
+    return;
+  }
+  const allowedIds = new Set(getCategoryOptionsForGroup(group).map(opt => opt.value));
+  group.categoryIds = group.categoryIds.filter(id => allowedIds.has(id));
+}
+
+function getCategoryOptionsForGroup(group: SpecificGroupItem) {
+  if (!group.treeNodeId) return [];
+  const subNodeIds = collectSubNodeIds(group.treeNodeId, categoryTreeData.value);
+  const matched = allActiveCategories.value.filter(
+    c => c.treeNodeId != null && subNodeIds.has(String(c.treeNodeId))
+  );
+  return matched.map(c => ({
+    label: c.securityGradeName ? `${c.categoryName} (${c.securityGradeName})` : c.categoryName,
+    value: c.id!,
+  }));
+}
+
+function handleSelectAllInGroup(group: SpecificGroupItem) {
+  const options = getCategoryOptionsForGroup(group);
+  group.categoryIds = options.map(opt => opt.value);
+}
+
+function filterCategoryOption(input: string, option: any) {
+  return (option?.label || '').toLowerCase().indexOf(input.toLowerCase()) >= 0;
+}
+
+function filterDatasourceOption(input: string, option: any) {
+  return (option?.label || '').toLowerCase().includes(input.toLowerCase());
+}
 
 const formData = reactive({
   ruleName: '',
@@ -210,27 +432,13 @@ const formData = reactive({
   priority: 10,
   lineageInheritanceEnabled: false,
   categoryScopeMode: 'ALL',
-  categoryScopeConfig: {},
-  scanSourceType: 'COMPUTE_ENGINE',
-  computeScopeConfig: {} as any,
-  datasourceScopeConfig: {
-    datasourceIds: [] as string[],
-    tableScopeType: 'ALL_TABLES',
-    filterConfig: {} as any,
-  },
+  scanSourceType: 'DATASOURCE',
 });
 
-const formRules: Record<string, any> = {
-  ruleName: [
-    { required: true, message: '请输入识别规则名称', trigger: 'blur' },
-    {
-      pattern: /^[a-zA-Z0-9_\u4e00-\u9fa5]{1,12}$/,
-      message: '包含中文、字母、数字、下划线，不超过12个字符',
-      trigger: 'blur',
-    },
-  ],
-  description: [{ max: 128, message: '说明不能超过128个字符', trigger: 'blur' }],
-};
+const datasourceScopeConfig = reactive({
+  datasourceIds: [] as string[],
+  tableScopeType: 'ALL_TABLES',
+});
 
 const modalTitle = computed(() => {
   switch (mode.value) {
@@ -245,86 +453,189 @@ const modalTitle = computed(() => {
   }
 });
 
-function open(modalMode: 'create' | 'edit' | 'clone', row?: RecognitionRuleItem) {
-  loadMetadata();
+async function open(modalMode: 'create' | 'edit' | 'clone', row?: RecognitionRuleItem) {
   mode.value = modalMode;
   visible.value = true;
+  modalLoading.value = true;
 
-  if (modalMode === 'create') {
-    currentId.value = null;
-    formData.ruleName = '';
-    formData.description = '';
-    formData.priority = 10;
-    formData.lineageInheritanceEnabled = false;
-    formData.categoryScopeMode = 'ALL';
-    formData.categoryScopeConfig = {};
-    formData.scanSourceType = 'COMPUTE_ENGINE';
-    computeConditionGroup.value = createInitialComputeCondition();
-    dsFilterConditionGroup.value = createInitialDatasourceFilterCondition();
-    formData.datasourceScopeConfig = {
-      datasourceIds: [],
-      tableScopeType: 'ALL_TABLES',
-      filterConfig: dsFilterConditionGroup.value,
-    };
-  } else if (row) {
-    currentId.value = row.id;
-    formData.ruleName = modalMode === 'clone' ? `${row.ruleName}_COPY`.slice(0, 12) : row.ruleName;
-    formData.description = row.description || '';
-    formData.priority = row.priority || 10;
-    formData.lineageInheritanceEnabled = row.lineageInheritanceEnabled ?? false;
-    formData.categoryScopeMode = 'ALL';
-    formData.categoryScopeConfig = {};
-    formData.scanSourceType = row.scanSourceType || 'COMPUTE_ENGINE';
+  try {
+    // 并行获取数据源列表、分类目录树、全量数据分类与最新详情
+    const [connRes, treeRes, catRes, detailRes] = await Promise.all([
+      GetConnectors().catch(() => ({ data: [] })),
+      api.getCategoryTree().catch(() => ({ data: [] })),
+      api.pageDataCategories({ pageIndex: 1, pageSize: 1000, status: 'ENABLED' as any }).catch(() => ({ data: [] })),
+      modalMode !== 'create' && row?.id ? recognitionRuleApi.getDetail(row.id).catch(() => null) : Promise.resolve(null),
+    ]);
 
-    if (row.computeScopeConfig) {
-      computeConditionGroup.value = normalizeComputeCondition(row.computeScopeConfig);
+    datasourceList.value = ((connRes as any)?.data || []).map((conn: any) => ({
+      label: conn.name || String(conn.id),
+      value: String(conn.id),
+    }));
+
+    categoryTreeData.value = formatCategoryTreeNodes((treeRes as any)?.data || []);
+    allActiveCategories.value = (catRes as any)?.data || [];
+
+    const activeRow: RecognitionRuleItem | undefined = (detailRes as any)?.data || row;
+
+    if (modalMode === 'create' || !activeRow) {
+      currentId.value = null;
+      formData.ruleName = '';
+      formData.description = '';
+      formData.priority = 10;
+      formData.lineageInheritanceEnabled = false;
+      formData.categoryScopeMode = 'ALL';
+      formData.scanSourceType = 'DATASOURCE';
+      selectedTreeNodeIds.value = [];
+      specificGroups.value = [{ id: '1', treeNodeId: null, categoryIds: [] }];
+      dsFilterConditionGroup.value = createInitialDatasourceFilterCondition();
+      datasourceScopeConfig.datasourceIds = [];
+      datasourceScopeConfig.tableScopeType = 'ALL_TABLES';
+    } else {
+      currentId.value = activeRow.id;
+      formData.ruleName = modalMode === 'clone' ? `${activeRow.ruleName}_COPY`.slice(0, 12) : activeRow.ruleName;
+      formData.description = activeRow.description || '';
+      formData.priority = activeRow.priority || 10;
+      formData.lineageInheritanceEnabled = activeRow.lineageInheritanceEnabled ?? false;
+      formData.categoryScopeMode = activeRow.categoryScopeMode || 'ALL';
+      formData.scanSourceType = 'DATASOURCE';
+
+      // 解析 categoryScopeConfig 并规范化为字符串 ID
+      try {
+        if (activeRow.categoryScopeConfig) {
+          const catCfg =
+            typeof activeRow.categoryScopeConfig === 'string'
+              ? JSON.parse(activeRow.categoryScopeConfig)
+              : activeRow.categoryScopeConfig;
+
+          if (formData.categoryScopeMode === 'TREE_NODE') {
+            const rawNodeIds = catCfg.treeNodeIds || (catCfg.treeNodeId ? [catCfg.treeNodeId] : []);
+            selectedTreeNodeIds.value = Array.isArray(rawNodeIds) ? rawNodeIds.map(String) : [String(rawNodeIds)];
+            specificGroups.value = [{ id: '1', treeNodeId: null, categoryIds: [] }];
+          } else if (formData.categoryScopeMode === 'SPECIFIC') {
+            selectedTreeNodeIds.value = [];
+            if (catCfg.groups && Array.isArray(catCfg.groups) && catCfg.groups.length > 0) {
+              specificGroups.value = catCfg.groups.map((g: any, idx: number) => ({
+                id: String(Date.now() + idx),
+                treeNodeId: g.treeNodeId != null ? String(g.treeNodeId) : null,
+                categoryIds: (g.categoryIds || []).map((cid: any) => typeof cid === 'number' ? cid : Number(cid) || cid),
+              }));
+            } else {
+              specificGroups.value = [{ id: '1', treeNodeId: null, categoryIds: [] }];
+            }
+          } else {
+            selectedTreeNodeIds.value = [];
+            specificGroups.value = [{ id: '1', treeNodeId: null, categoryIds: [] }];
+          }
+        } else {
+          selectedTreeNodeIds.value = [];
+          specificGroups.value = [{ id: '1', treeNodeId: null, categoryIds: [] }];
+        }
+      } catch {
+        selectedTreeNodeIds.value = [];
+        specificGroups.value = [{ id: '1', treeNodeId: null, categoryIds: [] }];
+      }
+
+      // 解析 datasourceScopeConfig 并规范化数据源 ID 为字符串
+      if (activeRow.datasourceScopeConfig) {
+        const cfg =
+          typeof activeRow.datasourceScopeConfig === 'string'
+            ? JSON.parse(activeRow.datasourceScopeConfig)
+            : activeRow.datasourceScopeConfig;
+        datasourceScopeConfig.datasourceIds = (cfg.datasourceIds || []).map(String);
+        datasourceScopeConfig.tableScopeType = cfg.tableScopeType || 'ALL_TABLES';
+        dsFilterConditionGroup.value = normalizeDatasourceFilterCondition(cfg.filterConfig || cfg);
+      } else {
+        datasourceScopeConfig.datasourceIds = [];
+        datasourceScopeConfig.tableScopeType = 'ALL_TABLES';
+        dsFilterConditionGroup.value = createInitialDatasourceFilterCondition();
+      }
     }
-    if (row.datasourceScopeConfig) {
-      const cfg =
-        typeof row.datasourceScopeConfig === 'string'
-          ? JSON.parse(row.datasourceScopeConfig)
-          : row.datasourceScopeConfig;
-      formData.datasourceScopeConfig.datasourceIds = cfg.datasourceIds || [];
-      formData.datasourceScopeConfig.tableScopeType = cfg.tableScopeType || 'ALL_TABLES';
-      dsFilterConditionGroup.value = normalizeDatasourceFilterCondition(cfg.filterConfig || cfg);
-    }
+
+    // 同步初始化值至 Formily 实例
+    formInstance.setValues({
+      ruleName: formData.ruleName,
+      description: formData.description,
+      priority: formData.priority,
+      categoryScopeMode: formData.categoryScopeMode,
+      scanSourceType: formData.scanSourceType,
+    });
+    formInstance.clearErrors();
+  } catch (err) {
+    console.error('初始化识别规则表单失败', err);
+  } finally {
+    modalLoading.value = false;
   }
 }
 
 async function handleSubmit() {
   try {
-    await formRef.value?.validate();
-  } catch {
+    if (formData.categoryScopeMode !== undefined) {
+      formInstance.setValues({ categoryScopeMode: formData.categoryScopeMode });
+    }
+    if (formData.scanSourceType !== undefined) {
+      formInstance.setValues({ scanSourceType: formData.scanSourceType });
+    }
+    const values = await formInstance.submit();
+    if (values) {
+      formData.ruleName = (values as any).ruleName || formData.ruleName;
+      formData.priority = (values as any).priority ?? formData.priority;
+      formData.description = (values as any).description ?? formData.description;
+      formData.categoryScopeMode = formData.categoryScopeMode || (values as any).categoryScopeMode;
+      formData.scanSourceType = formData.scanSourceType || (values as any).scanSourceType;
+    }
+  } catch (err) {
+    message.warning('请完善表单必填项');
+    console.warn('Formily validation unpassed:', err);
     return;
   }
 
-  // 1. 深度校验计算源规则
-  if (formData.scanSourceType === 'COMPUTE_ENGINE') {
-    if (computeConditionRef.value?.validate) {
-      computeConditionRef.value.validate();
-    }
-    const computeCheck = validateRecognitionCondition(computeConditionGroup.value, 'COMPUTE_ENGINE');
-    if (!computeCheck.valid) {
-      message.warning(computeCheck.message || '计算源规则配置不符合要求');
+  // 1. 深度校验数据分类分级
+  let categoryScopeConfig: any = {};
+  if (formData.categoryScopeMode === 'TREE_NODE') {
+    if (selectedTreeNodeIds.value.length === 0) {
+      message.warning('请选择至少一个分类目录');
       return;
     }
+    categoryScopeConfig = {
+      treeNodeIds: selectedTreeNodeIds.value,
+    };
+  } else if (formData.categoryScopeMode === 'SPECIFIC') {
+    if (specificGroups.value.length === 0) {
+      message.warning('请至少添加一组数据分类配置');
+      return;
+    }
+    for (let i = 0; i < specificGroups.value.length; i++) {
+      const g = specificGroups.value[i];
+      if (!g.treeNodeId) {
+        message.warning(`第 ${i + 1} 组分类配置未选择上级目录`);
+        return;
+      }
+      if (!g.categoryIds || g.categoryIds.length === 0) {
+        message.warning(`第 ${i + 1} 组分类配置未选择数据分类`);
+        return;
+      }
+    }
+    categoryScopeConfig = {
+      groups: specificGroups.value.map(g => ({
+        treeNodeId: g.treeNodeId,
+        categoryIds: g.categoryIds,
+      })),
+    };
   }
 
   // 2. 深度校验数据源规则
-  if (formData.scanSourceType === 'DATASOURCE') {
-    if (formData.datasourceScopeConfig.datasourceIds.length === 0) {
-      message.warning('请选择至少一个数据源');
-      return;
+  if (datasourceScopeConfig.datasourceIds.length === 0) {
+    message.warning('请选择至少一个数据源');
+    return;
+  }
+  if (datasourceScopeConfig.tableScopeType === 'SPECIFIC_TABLES') {
+    if (dsConditionRef.value?.validate) {
+      dsConditionRef.value.validate();
     }
-    if (formData.datasourceScopeConfig.tableScopeType === 'SPECIFIC_TABLES') {
-      if (dsConditionRef.value?.validate) {
-        dsConditionRef.value.validate();
-      }
-      const dsCheck = validateRecognitionCondition(dsFilterConditionGroup.value, 'DATASOURCE');
-      if (!dsCheck.valid) {
-        message.warning(dsCheck.message || '指定表过滤规则配置不符合要求');
-        return;
-      }
+    const dsCheck = validateRecognitionCondition(dsFilterConditionGroup.value, 'DATASOURCE');
+    if (!dsCheck.valid) {
+      message.warning(dsCheck.message || '指定表过滤规则配置不符合要求');
+      return;
     }
   }
 
@@ -335,13 +646,12 @@ async function handleSubmit() {
       description: formData.description,
       priority: formData.priority,
       lineageInheritanceEnabled: false,
-      categoryScopeMode: 'ALL' as any,
-      categoryScopeConfig: {},
+      categoryScopeMode: formData.categoryScopeMode as any,
+      categoryScopeConfig,
       scanSourceType: formData.scanSourceType as any,
-      computeScopeConfig: computeConditionGroup.value,
       datasourceScopeConfig: {
-        datasourceIds: formData.datasourceScopeConfig.datasourceIds,
-        tableScopeType: formData.datasourceScopeConfig.tableScopeType,
+        datasourceIds: datasourceScopeConfig.datasourceIds,
+        tableScopeType: datasourceScopeConfig.tableScopeType,
         filterConfig: dsFilterConditionGroup.value,
       },
     };
@@ -417,6 +727,54 @@ defineExpose({ open });
       }
     }
 
+    .category-mode-tip {
+      color: #64748b;
+      line-height: 1.5;
+    }
+
+    .specific-groups-list {
+      .specific-group-card {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        padding: 10px 14px;
+
+        .group-card-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 8px;
+          padding-bottom: 6px;
+          border-bottom: 1px dashed #f0f0f0;
+
+          .group-badge {
+            font-size: 12px;
+            font-weight: 600;
+            color: #1677ff;
+            background: #e6f4ff;
+            padding: 2px 8px;
+            border-radius: 4px;
+          }
+
+          .group-delete-btn {
+            padding: 0 4px;
+            height: auto;
+            font-size: 12px;
+          }
+        }
+      }
+    }
+
+    .add-group-btn {
+      border-style: dashed;
+      color: #1677ff;
+      border-color: #91caff;
+      &:hover {
+        color: #4096ff;
+        border-color: #4096ff;
+      }
+    }
+
     .scope-box {
       background: #fafafa;
       border: 1px solid #f0f0f0;
@@ -477,8 +835,25 @@ defineExpose({ open });
 
         .condition-group {
           background: transparent;
-          padding: 6px 0 6px 6px;
           position: relative;
+
+          // 核心修复：根条件组存在多条条件时，确保左侧留足 48px 空间，容纳垂直线与“且/或”徽章
+          &.is-root {
+            padding: 4px 0;
+
+            &.has-multiple-conditions {
+              padding-left: 48px !important;
+            }
+          }
+
+          // 子条件组支持嵌套缩进与边框
+          &:not(.is-root) {
+            margin: 6px 0 6px 32px;
+            padding: 8px 12px;
+            background: #ffffff;
+            border: 1px solid #f0f0f0;
+            border-radius: 6px;
+          }
 
           .condition-item {
             display: flex;
@@ -509,3 +884,20 @@ defineExpose({ open });
   }
 }
 </style>
+
+<style lang="less">
+/* 下拉浮层基础保障样式：防止横向溢出与滚动条，保持 Ant Design 原生树节点排版 */
+.ant-select-dropdown,
+.ant-tree-select-dropdown {
+  overflow-x: hidden !important;
+
+  .ant-select-tree {
+    overflow-x: hidden !important;
+
+    .ant-select-tree-list-holder-inner {
+      overflow-x: hidden !important;
+    }
+  }
+}
+</style>
+
